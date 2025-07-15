@@ -76,7 +76,7 @@ static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed)
     wz_remote = spin_diameter * 3.14159f * 2.5f;  // m/s
   }
   else {
-    wz_remote=0;
+    wz_remote = 0;
     //wz_remote = -PID_Calc(&wz_pid,D_yaw.pos*57.29578f,D_YAW_BASE_FIRST*57.29578f);
   }
 
@@ -94,8 +94,8 @@ static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed)
   wheel_speed[1] = scale * (+vy + vx + wz);
   wheel_speed[2] = scale * (+vy - vx + wz);
   wheel_speed[3] = scale * (-vy - vx + wz);
-  
-  for(uint8_t i = 0; i < 4; i++) {
+
+  for (uint8_t i = 0; i < 4; i++) {
     if (wheel_speed[i] > Motor_Speed_Rpm_Out_Limit) {
       wheel_speed[i] = Motor_Speed_Rpm_Out_Limit;
     }
