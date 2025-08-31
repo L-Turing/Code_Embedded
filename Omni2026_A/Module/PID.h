@@ -33,8 +33,8 @@ typedef struct
   float output_val;
 } PID;
 
-extern PID M3508_pid[4];
 extern PID wz_pid;
+void PID_Init();
 float PID_Calc(PID * pid, float actual_val, float target_val);
 
 #ifdef __cplusplus

@@ -95,3 +95,11 @@ void SignalMark(type_signal sign)
       break;
   }
 }
+
+/*
+LED1-4:M3508[4]&蜂鸣器
+LED5:超级电容&蜂鸣器
+LED6:裁判系统串口线&蜂鸣器
+LED7:板间通信&蜂鸣器
+LED8:M2006&蜂鸣器
+*/

@@ -56,6 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     Module/PID.c
     Module/Referee.c
     Module/Power.c
+    Module/IMU.c
     User/main_task.c
     # Add user sources here
 )

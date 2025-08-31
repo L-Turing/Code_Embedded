@@ -3,35 +3,8 @@
 #include "DJIMotor.h"
 #include "Peripheral.h"
 #include "can.h"
+#include "imu.h"
 #include "string.h"
-
-/**
- * @brief Initializes CAN1 peripheral and configures its filter.
- * This function sets up the CAN1 peripheral with a specific filter configuration
- * to receive messages from the CAN bus.
- */
-void Can1_Init(void)
-{
-  CAN_FilterTypeDef can_filter_st;
-  can_filter_st.FilterActivation = ENABLE;
-  can_filter_st.FilterMode = CAN_FILTERMODE_IDLIST;
-  can_filter_st.FilterScale = CAN_FILTERSCALE_16BIT;
-  can_filter_st.FilterIdHigh = 0x201 << 5;
-  can_filter_st.FilterIdLow = 0x202 << 5;
-  can_filter_st.FilterMaskIdHigh = 0x203 << 5;
-  can_filter_st.FilterMaskIdLow = 0x204 << 5;
-  can_filter_st.FilterBank = 0;
-  can_filter_st.FilterFIFOAssignment = CAN_RX_FIFO0;
-  can_filter_st.SlaveStartFilterBank = 14;
-  HAL_CAN_ConfigFilter(&hcan1, &can_filter_st);
-
-  can_filter_st.FilterIdHigh = 0x123 << 5;
-  can_filter_st.FilterBank = 1;
-  HAL_CAN_ConfigFilter(&hcan1, &can_filter_st);
-
-  HAL_CAN_Start(&hcan1);
-  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-}
 
 /**
  * @brief Initializes CAN2 peripheral and configures its filter.
@@ -42,18 +15,49 @@ void Can2_Init(void)
 {
   CAN_FilterTypeDef can_filter_st;
   can_filter_st.FilterActivation = ENABLE;
+  can_filter_st.FilterMode = CAN_FILTERMODE_IDLIST;
+  can_filter_st.FilterScale = CAN_FILTERSCALE_16BIT;
+  can_filter_st.FilterIdHigh = 0x201 << 5;
+  can_filter_st.FilterIdLow = 0x202 << 5;
+  can_filter_st.FilterMaskIdHigh = 0x203 << 5;
+  can_filter_st.FilterMaskIdLow = 0x204 << 5;
+  can_filter_st.FilterBank = 14;
+  can_filter_st.FilterFIFOAssignment = CAN_RX_FIFO1;
+
+  HAL_CAN_ConfigFilter(&hcan2, &can_filter_st);
+
+  can_filter_st.FilterIdHigh = 0x123 << 5;
+  can_filter_st.FilterIdLow = 0x14 << 5;
+  can_filter_st.FilterMaskIdHigh = 0x13 << 5;
+  can_filter_st.FilterBank = 15;
+  HAL_CAN_ConfigFilter(&hcan2, &can_filter_st);
+
+  HAL_CAN_Start(&hcan2);
+  HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING);
+}
+
+/**
+ * @brief Initializes CAN1 peripheral and configures its filter.
+ * This function sets up the CAN1 peripheral with a specific filter configuration
+ * to receive messages from the CAN bus.
+ */
+void Can1_Init(void)
+{
+  CAN_FilterTypeDef can_filter_st;
+  can_filter_st.FilterActivation = ENABLE;
   can_filter_st.FilterMode = CAN_FILTERMODE_IDMASK;
   can_filter_st.FilterScale = CAN_FILTERSCALE_32BIT;
   can_filter_st.FilterIdHigh = 0x0000;
   can_filter_st.FilterIdLow = 0x0000;
   can_filter_st.FilterMaskIdHigh = 0x0000;
   can_filter_st.FilterMaskIdLow = 0x0000;
-  can_filter_st.FilterBank = 14;
-  can_filter_st.FilterFIFOAssignment = CAN_RX_FIFO1;
-  HAL_CAN_ConfigFilter(&hcan2, &can_filter_st);
+  can_filter_st.FilterBank = 0;
+  can_filter_st.FilterFIFOAssignment = CAN_RX_FIFO0;
+  can_filter_st.SlaveStartFilterBank = 14;
+  HAL_CAN_ConfigFilter(&hcan1, &can_filter_st);
 
-  HAL_CAN_Start(&hcan2);
-  HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO1_MSG_PENDING);
+  HAL_CAN_Start(&hcan1);
+  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 }
 
 /**
@@ -147,17 +151,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef * hcan)
   HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &can1_rxheader, rxdatafifo0);
   if (hcan == &hcan1) {
     switch (can1_rxheader.StdId) {
-      case 0x201:
-      case 0x202:
-      case 0x203:
-      case 0x204: {
-        static uint8_t id = 0;
-        id = can1_rxheader.StdId - 0x201;
-        M3508_motor[id].motor_types = M3508;
-        M3508_motor[id].motor_stdid = can1_rxheader.StdId;
-        Get_Info_DJIMotor(&M3508_motor[id], rxdatafifo0);
+      case 0x209:
+        GM6020_motor.motor_types = GM6020;
+        GM6020_motor.motor_stdid = can1_rxheader.StdId;
+        Get_Info_DJIMotor(&GM6020_motor, rxdatafifo0);
         break;
-      }
+      case 0x201:
+        motor_2006.motor_types = M2006;
+        motor_2006.motor_stdid = can1_rxheader.StdId;
+        Get_Info_DJIMotor(&motor_2006, rxdatafifo0);
+        break;
 
       default:
         break;
@@ -179,8 +182,22 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef * hcan)
   HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO1, &can2_rxheader, rxdatafifo1);
   if (hcan == &hcan2) {
     switch (can2_rxheader.StdId) {
+      case 0x201:
       case 0x202:
-        /* code */
+      case 0x203:
+      case 0x204: {
+        static uint8_t id = 0;
+        id = can2_rxheader.StdId - 0x201;
+        M3508_motor[id].motor_types = M3508;
+        M3508_motor[id].motor_stdid = can2_rxheader.StdId;
+        Get_Info_DJIMotor(&M3508_motor[id], rxdatafifo1);
+        break;
+      }
+      case 0x13:
+        IMU_UpdateData(rxdatafifo1);
+        break;
+      case 0x14:
+        IMU_UpdateData(rxdatafifo1);
         break;
 
       default:

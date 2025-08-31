@@ -1,6 +1,8 @@
 #ifndef __MAIN_TASK_H
 #define __MAIN_TASK_H
 
+#define D_YAW_BASE_FIRST 0.0f  //角度 °
+
 #include "stdint.h"
 
 #pragma pack(push, 1)

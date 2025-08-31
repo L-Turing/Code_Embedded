@@ -1,15 +1,34 @@
 #include "PID.h"
 
+#include "DJIMotor.h"
 #include "main.h"
 #include "math.h"
 
-PID M3508_pid[4] = {
-  {50.0f, 1.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
-  {50.0f, 1.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
-  {50.0f, 1.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
-  {50.0f, 1.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
+static PID M3508_pid[4] = {
+  {20.0f, 0.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
+  {20.0f, 0.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
+  {20.0f, 0.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
+  {20.0f, 0.0f, 0.0f, 0, 0, 0, 2000, 12000, 0, 0, 0, 0},
 };
-PID wz_pid = {2.0f, 0.2f, 0.0f, 0, 0, 0, 1.0, 10, 0, 0, 0, 0};
+static PID GM6020_pid_speed = {14.0f, 1.0f, 0.0f, 0, 0, 0, 1500, 12000, 0, 0, 0, 0};
+static PID GM6020_pid_position = {4.0f, 0.0f, 1.0f, 0, 0, 0, 1000, 12000, 0, 0, 0, 0};
+
+static PID pid_2006_speed = {20.0f,1.0f, 0.0f, 0,0,0,1000, 8500, 0, 0, 0, 0};
+static PID pid_2006_position = {5.0f, 0.0f, 0.0f,0,0,0,0, 8000, 0, 0, 0, 0};
+
+PID wz_pid = {-0.066f, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0}; //最大为2
+
+void PID_Init()
+{
+  for (uint8_t i = 0; i < 4; i++) {
+    M3508_motor[i].pid_speed = &M3508_pid[i];
+    M3508_motor[i].pid_position = NULL;
+  }
+  GM6020_motor.pid_speed = &GM6020_pid_speed;
+  GM6020_motor.pid_position = &GM6020_pid_position;
+  motor_2006.pid_speed = &pid_2006_speed;
+  motor_2006.pid_position = &pid_2006_position;
+}
 
 // PID计算函数
 // 输入实际值和目标值，返回PID输出值

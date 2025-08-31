@@ -46,11 +46,12 @@ void Chassis_Power_Control(float * current)
   uint16_t chassis_power_limit = 0;
   Get_Chassis_Referee(&chassis_power_limit, &buffer_energy);
 
-  chassis_power_limit=20; //调试用，实际使用时请注释掉
-
+  chassis_power_limit=35;//测试用
   float predicted_total_power = 0.0f;
   float expected_total_power = chassis_power_limit - 3;
   float wheel_factor = 1.0f;
+
+  //超级电容
 
   Predicted_Power(
     Power_K0_3508_out, Power_K1_3508_out, Power_K2_3508_out, Power_Constant_3508, current,
