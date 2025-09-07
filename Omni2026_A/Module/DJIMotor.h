@@ -61,11 +61,11 @@ typedef enum{
 
 extern Motor M3508_motor[4];
 extern Motor GM6020_motor;
-extern Motor motor_2006;
+extern Motor M2006_motor;
 
 void Chassis_Motor(uint8_t which_can, float * target);
 void Drive_GM6020_Motor(type_motor_mode mode, float target);
-void Set2006(float m2006_set,type_motor_mode mode);
+void Drive_M2006_Motor(float m2006_set,type_motor_mode mode);
 void Update_Info_DJIMotor(Motor * motor, uint8_t array_length);
 void Get_Info_DJIMotor(Motor * motor, uint8_t * canbuf_receive);
 

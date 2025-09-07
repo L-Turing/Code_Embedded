@@ -6,12 +6,11 @@
 #include "arm_math.h"
 #include "bsp_can.h"
 
-Motor M3508_motor[4];      //M3508电机数组
-Motor GM6020_motor = {0};  //GM6020电机
-Motor motor_2006 = {0};    //2006电机
+Motor M3508_motor[4] = {0};  //M3508电机数组
+Motor GM6020_motor = {0};    //GM6020电机
+Motor M2006_motor = {0};     //2006电机
 
 /**
-
  * @brief 控制底盘电机
  * @param which_can CAN总线编号
  * @param target 目标速度数组
@@ -59,21 +58,20 @@ void Drive_GM6020_Motor(type_motor_mode mode, float target)
     PID_Calc(
       GM6020_motor.pid_speed, GM6020_motor.speed_rpm_out, GM6020_motor.pid_position->output_val);
   }
-  CanSend_DJIMotor(2, 0x2FE, (int16_t)GM6020_motor.pid_speed->output_val, 0, 0, 0);
+  CanSend_DJIMotor(2, 0x2FE, (int16_t)(GM6020_motor.pid_speed->output_val), 0, 0, 0);
 }
 
-float m2006_out = 0.0f;
-void Set2006(float m2006_set, type_motor_mode mode)
+void Drive_M2006_Motor(float set_m2006, type_motor_mode mode)
 {
   if (mode == Position_Mode) {
-    PID_Calc(motor_2006.pid_position, motor_2006.accumlate_rad_out * 57.29583f, m2006_set);
-    PID_Calc(motor_2006.pid_speed, motor_2006.speed_rad_rotor, motor_2006.pid_position->output_val);
+    PID_Calc(M2006_motor.pid_position, M2006_motor.accumlate_rad_out * 57.29583f, set_m2006);
+    PID_Calc(
+      M2006_motor.pid_speed, M2006_motor.speed_rpm_out, M2006_motor.pid_position->output_val);
   }
   if (mode == Speed_Mode) {
-    PID_Calc(motor_2006.pid_speed, motor_2006.speed_rad_rotor, m2006_set);
+    PID_Calc(M2006_motor.pid_speed, M2006_motor.speed_rpm_out, set_m2006);
   }
-  m2006_out = (int16_t)(motor_2006.pid_speed->output_val);
-  CanSend_DJIMotor(1, 0x200, m2006_out, 0, 0, 0);
+  CanSend_DJIMotor(1, 0x200, (int16_t)(M2006_motor.pid_speed->output_val), 0, 0, 0);
 }
 
 /**

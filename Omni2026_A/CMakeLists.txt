@@ -52,6 +52,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     BSP/bsp_crc.c
     BSP/bsp_dwt.c
     Module/Peripheral.c
+    Module/DaMiao.c
     Module/DJIMotor.c
     Module/PID.c
     Module/Referee.c

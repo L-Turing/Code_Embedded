@@ -1,6 +1,7 @@
 #include "main_task.h"
 
 #include "DJIMotor.h"
+#include "DaMiao.h"
 #include "IMU.h"
 #include "PID.h"
 #include "Peripheral.h"
@@ -33,9 +34,7 @@ void StartChassis(void * argument)
     else {
       Chassis_Motor(2, v_tar);
     }
-    Update_Info_DJIMotor(M3508_motor, 4);    //底盘电机
-    Update_Info_DJIMotor(&GM6020_motor, 1);  //yaw轴电机
-    Update_Info_DJIMotor(&motor_2006, 1);    //云台电机
+    Update_Info_DJIMotor(M3508_motor, 4);  //底盘电机
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(2);
   }
@@ -53,8 +52,8 @@ void StartRemote(void * argument)
     osDelay(1);
     IMU_RequestData(&hcan2, 0x03, 0x04);  //请求IMU数据
     osDelay(1);
-    USART1_RemoteCallback();              //DT7
-    USART7_RemoteCallback();              //裁判系统
+    USART1_RemoteCallback();  //DT7
+    USART7_RemoteCallback();  //裁判系统
     osDelay(1);
   }
 }
@@ -83,22 +82,23 @@ static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed)
   }
 
   //映射为 m/s
-  vx_remote = (float)RC_Ctl_temp.ch3 / 130.0f * 0.7071f;  //660.0f /130.0f * 0.7071f = 3.600f m/s
-  vy_remote = (float)RC_Ctl_temp.ch2 / 130.0f * 0.7071f;
+  vx_remote = (float)RC_Ctl_temp.ch3 / 120.0f * 0.7071f;  //660.0f /120.0f * 0.7071f = 3.89m/s
+  vy_remote = (float)RC_Ctl_temp.ch2 / 120.0f * 0.7071f;
 
   //底盘最小回归角
   float ecd_angle_out_tmp = 0.0f;
   float wz_reg = 0.0f;
-  if (GM6020_motor.ecd_angle_out - D_YAW_BASE_FIRST < -180.0f) {
-    ecd_angle_out_tmp = GM6020_motor.ecd_angle_out + 360.0f;
+  if (D_yaw.pos - D_YAW_BASE_FIRST < -3.14159f) {
+    ecd_angle_out_tmp = D_yaw.pos + 6.28318f;
   }
-  else if (GM6020_motor.ecd_angle_out - D_YAW_BASE_FIRST > +180.0f) {
-    ecd_angle_out_tmp = GM6020_motor.ecd_angle_out - 360.0f;
+  else if (D_yaw.pos - D_YAW_BASE_FIRST > +3.14159f) {
+    ecd_angle_out_tmp = D_yaw.pos - 6.28318f;
   }
   else {
-    ecd_angle_out_tmp = GM6020_motor.ecd_angle_out;
+    ecd_angle_out_tmp = D_yaw.pos;
   }
-  if (fabs(ecd_angle_out_tmp - D_YAW_BASE_FIRST) > 15.0f) {  //±15°之外或±15°之内且移动 则回归
+
+  if (fabs(ecd_angle_out_tmp - D_YAW_BASE_FIRST) > 0.26180f) {  //±15°之外或±15°之内且移动 则回归
     wz_reg = PID_Calc(&wz_pid, ecd_angle_out_tmp, D_YAW_BASE_FIRST);  //底盘回归角速度 m/s
   }
   else {            //±15°之内,且不移动 则不回归
@@ -111,11 +111,11 @@ static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed)
   }
   else if (RC_Ctl_temp.ch4 < -100) {
     wz_remote = wz_reg - spin_diameter * PI * 2.0f;
-    ;
   }
   else {
     wz_remote = wz_reg;
   }
+  
   //底盘回归角及小陀螺下移动的角速度补偿
   float follow_angle =
     (ecd_angle_out_tmp - D_YAW_BASE_FIRST) / 180.0f * PI + 0.003f * wz_remote * 2 * PI;  //弧度 rad

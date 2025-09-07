@@ -13,10 +13,6 @@ uint8_t rawData[137];
 uint8_t rx_usart6[20];
 RC_Ctl_t rc_ctl;
 
-/**
- * @brief Initializes USART1 and USART7 peripherals for remote control and referee system.
- * This function sets up the USART1 for remote control data reception and USART7 for referee system data reception.
- */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef * huart, uint16_t Size)
 {
   (void)Size;
@@ -26,7 +22,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef * huart, uint16_t Size)
   }
   if (huart == &huart6) {  //串口收发 
     HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rx_usart6, 20);
-    __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT);
+    __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT); 
   }
   if (huart == &huart7) {  //裁判系统
     HAL_UARTEx_ReceiveToIdle_DMA(&huart7, rawData, 137);
