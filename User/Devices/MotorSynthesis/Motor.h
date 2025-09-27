@@ -36,37 +36,38 @@ enum class which_cans {
 class Motor_Class {
 private:
 public:
-  int16_t flag_connect;                    //电机连接标志
-  which_cans which_can;                    // 电机所用CAN
-  motor_types motor_type;                  // 电机类型
-  motor_control_modes motor_control_mode;  // 电机控制模式
-  int8_t temperature;
-  int16_t given_current;
-  int16_t last_ecd;
-  int16_t ecd;
-  int16_t speed_rpm_rotor; // 转子转速 rpm
-  float speed_rpm_out;     // 输出轴转速 rpm
-  float speed_rad_rotor;   // 转子转速 rad/s 
-  float speed_rad_out;     // 输出轴转速 rad/s
+  int16_t flag_connect{};                    //电机连接标志
+  which_cans which_can{};                    // 电机所用CAN
+  motor_types motor_type{};                  // 电机类型
+  motor_control_modes motor_control_mode{};  // 电机控制模式
+  int8_t temperature{};
+  int16_t given_current{};
+  int16_t last_ecd{};
+  int16_t ecd{};
+  int16_t speed_rpm_rotor{}; // 转子转速 rpm
+  float speed_rpm_out{};     // 输出轴转速 rpm
+  float speed_rad_rotor{};   // 转子转速 rad/s 
+  float speed_rad_out{};     // 输出轴转速 rad/s
 
-  float accumlate_rad_rotor;  // 转子累积角度 rad
-  float accumlate_rad_out;    // 输出轴累积角度 rad
-  float ecd_rad_rotor;    // 转子编码器值 rad
-  float ecd_rad_out;      // 输出轴编码器值 rad
+  float accumlate_rad_rotor{};  // 转子累积角度 rad
+  float accumlate_rad_out{};    // 输出轴累积角度 rad
+  float ecd_rad_rotor{};    // 转子编码器值 rad
+  float ecd_rad_out{};      // 输出轴编码器值 rad
 
-  int32_t circle_number_rotor;  // 转子过圈数
-  float reduction_ratio;        // 减速比
+  int32_t circle_number_rotor{};  // 转子过圈数
+  float reduction_ratio{};        // 减速比
 
-  uint32_t motor_send_id;     // 电机发送ID
-  uint32_t motor_feedback_id; // 电机反馈ID
+  uint32_t motor_send_id{};     // 电机发送ID
+  uint32_t motor_feedback_id{}; // 电机反馈ID
 
-  float predicted_power; // 预测功率
-  float expected_power;  // 期望功率
-  float scale_power;     // 功率比例
-  float output;          //电机输出
-  PID* pid_speed;        // 速度PID指针
-  PID* pid_position;     // 位置PID指针
-  Motor_Class(which_cans canx, motor_types m, uint32_t send_id,
+  float predicted_power{}; // 预测功率
+  float expected_power{};  // 期望功率
+  float scale_power{};     // 功率比例
+  float output{};          //电机输出
+  PID* pid_speed{};        // 速度PID指针
+  PID* pid_position{};     // 位置PID指针
+
+  explicit Motor_Class(which_cans canx, motor_types m, uint32_t send_id,
     uint32_t feedback_id)
     : which_can(canx),
     motor_type(m),
@@ -84,7 +85,7 @@ public:
 class DJIMotor_Class : public Motor_Class {
 private:
 public:
-  DJIMotor_Class(which_cans canx, motor_types m, uint32_t send_id,
+  explicit DJIMotor_Class(which_cans canx, motor_types m, uint32_t send_id,
     uint32_t feedback_id)
     : Motor_Class(canx, m, send_id, feedback_id) {
   }  // 电机类型 电机can 电机ID
@@ -105,19 +106,20 @@ private:
   inline static float T_MAX = 10.0f;
 
 public:
-  uint16_t state;
-  int p_int;
-  int v_int;
-  int t_int;
-  float pos;
-  float vel;
-  float tor;
-  float Tmos;
-  float Tcoil;
-  float pos_last;
-  int32_t cirnum;
-  float accumulate_angle;
-  DaMiaoMotor_Class(which_cans canx, motor_types m, uint32_t send_id,
+  uint16_t state{};
+  int p_int{};
+  int v_int{};
+  int t_int{};
+  float pos{};
+  float vel{};
+  float tor{};
+  float Tmos{};
+  float Tcoil{};
+  float pos_last{};
+  int32_t cirnum{};
+  float accumulate_angle{};
+
+  explicit DaMiaoMotor_Class(which_cans canx, motor_types m, uint32_t send_id,
     uint32_t feedback_id)
     : Motor_Class(canx, m, send_id, feedback_id) {
   }  // 电机类型 电机can 电机ID

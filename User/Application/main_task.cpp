@@ -68,27 +68,25 @@ void StartGimbal(void const* argument)
   for (;;) {
     if (RC_Ctl.s1 == 1 || RC_Ctl.s1 == 3) {
       ShootPart();
-      // if (RC_Ctl.s1 == 1) PTZPart_Auto();
-      // if (RC_Ctl.s1 == 3) 
       PTZPart();
     }
     else {
       PTZPart_Disable();
     }
 
-    //电机反馈处理
+    //电机中断反馈处理
     motor_yaw.DaMiaoFeedback(data_buffer[0]);
     motor_ammunition.DJIFeedback(data_buffer[1]);
     motor_pitch.DJIFeedback(data_buffer[8]);
     motor_friwheel_left.DJIFeedback(data_buffer[9]);
     motor_friwheel_right.DJIFeedback(data_buffer[10]);
 
-    //电机信息更新
+    //电机数据信息更新
     motor_yaw.Update_Info();
     motor_pitch.Update_Info();
     motor_ammunition.Update_Info();
 
-    //掉线保护
+    //掉线提示
     if (motor_yaw.flag_connect > 300) motor_yaw.flag_connect = 300;
     if (motor_ammunition.flag_connect > 300) motor_ammunition.flag_connect = 300;
     if (motor_pitch.flag_connect > 300) motor_pitch.flag_connect = 300;
@@ -118,12 +116,11 @@ void StartIMU(void const* argument)
 /*------------------------------------------------*/
 
 //热量控制
-uint16_t heat_remain = 0;
 static void ShootHeat(
   uint16_t shoot_heat_data1, uint16_t shoot_heat_data2, uint16_t shoot_cooling,
   uint16_t shoot_heat_limit, float& shoot_freq)
 {
-  heat_remain = shoot_heat_limit - shoot_heat_data1;
+  uint16_t heat_remain = shoot_heat_limit - shoot_heat_data1;
   if (heat_remain >= 100) {
     shoot_freq = 8500;
   }
@@ -154,25 +151,31 @@ static void ShootPart()
   }
 
   if (RC_Ctl.s2 != 2) {
+    //摩擦轮
     motor_friwheel_left.SetFriWheel(-6400.0f);
     motor_friwheel_right.SetFriWheel(+6400.0f);
 
-    if (RC_Ctl.s1 == 3) {  //单发
+    //单发
+    if (RC_Ctl.s1 == 3 && motor_ammunition.pid_speed->Locked_Judge == 0) {
       if (last_s1 == 1) target_angle = motor_ammunition.accumlate_rad_out * 57.2958f;
-      if ((RC_Ctl.s2 == 1) && (last_s2 == 3)) target_angle += 36.0f * 2.5f;
+      if ((RC_Ctl.s2 == 1) && (last_s2 == 3)) target_angle += 36.0f * 1.5f;
       motor_ammunition.SetAmmunition(target_angle, motor_control_modes::Position_Mode);
     }
-    else if ((RC_Ctl.s1 == 1)) {  //连发  && (recepakge.boolpackage.can_shoot == 1)
+
+    //连发  && (recepakge.boolpackage.can_shoot == 1)
+    if (RC_Ctl.s1 == 1 && motor_ammunition.pid_speed->Locked_Judge == 0) {
       if (RC_Ctl.s2 == 1) {
-        ShootHeat(referee_shoot_heat1, referee_shoot_heat2, referee_shoot_cooling, referee_shoot_heat_limit,
-          shoot_freq_t_dr);
+        ShootHeat(referee_shoot_heat1, referee_shoot_heat2, referee_shoot_cooling, referee_shoot_heat_limit, shoot_freq_t_dr);
         //motor_ammunition.SetAmmunition(shoot_freq_t_dr, motor_control_modes::Speed_Mode);
-        motor_ammunition.SetAmmunition(7000, motor_control_modes::Speed_Mode);
+        motor_ammunition.SetAmmunition(6000, motor_control_modes::Speed_Mode);
       }
-      else {
-        motor_ammunition.SetAmmunition(0, motor_control_modes::Speed_Mode);
-      }
+      if (RC_Ctl.s2 == 3) motor_ammunition.SetAmmunition(0, motor_control_modes::Speed_Mode);
     }
+
+    //堵转保护，电机反转
+    if (motor_ammunition.pid_speed->Locked_Judge == 1)
+      motor_ammunition.SetAmmunition(-1000, motor_control_modes::Speed_Mode);
+
   }
   else {
     target_angle = motor_ammunition.accumlate_rad_out * 57.2958f;  //立刻停止在当前角度
@@ -180,10 +183,12 @@ static void ShootPart()
     motor_friwheel_left.SetFriWheel(0.0f);
     motor_friwheel_right.SetFriWheel(0.0f);
   }
+
   last_s1 = RC_Ctl.s1;
   last_s2 = RC_Ctl.s2;
   CanSend(1, DJI, motor_ammunition.motor_send_id, motor_ammunition.output, 0, 0, 0);
   CanSend(2, DJI, 0x200, motor_friwheel_left.output, motor_friwheel_right.output, 0, 0);
+  osDelay(1);
 }
 
 static void PTZPart()

@@ -114,7 +114,7 @@ int main(void)
   MX_IWDG_Init();  //在DWT初始化之后！！！！！
   Can1_Init();
   Can2_Init();
-  PID_Init_();
+  PID_Init_Motor();
 
   HAL_UARTEx_ReceiveToIdle_DMA(&huart3, rx_buffer, 18);
   __HAL_DMA_DISABLE_IT(huart3.hdmarx, DMA_IT_HT);

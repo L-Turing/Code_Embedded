@@ -7,28 +7,31 @@ extern "C" {
 #include "main.h"
 #include "stdint.h"
 
-typedef struct
-{
-  float kp;
-  float ki;
-  float kd;
+  typedef struct
+  {
+    float kp;
+    float ki;
+    float kd;
 
-  float pout;
-  float iout;
-  float dout;
+    float pout;
+    float iout;
+    float dout;
 
-  float maxI;  //maxI积分限幅
-  float maxO;  //maxO输出限幅
+    float maxI;  //maxI积分限幅
+    float maxO;  //maxO输出限幅
 
-  float Error;
-  float LastError;
-  float PrevError;
+    float Error;
+    float LastError;
+    float PrevError;
 
-  float output;
-} PID;
+    float output;
+    int32_t Locked_Count;
+    int32_t Locked_Judge;
 
-void PID_Init_();
-float PID_Calc(PID * pid, float actual_val, float target_val);
+  } PID;
+
+  void PID_Init_Motor();
+  float PID_Calc(PID* pid, float actual_val, float target_val);
 
 #ifdef __cplusplus
 }
