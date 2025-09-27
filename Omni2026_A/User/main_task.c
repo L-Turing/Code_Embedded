@@ -1,7 +1,5 @@
 #include "main_task.h"
-
 #include "DJIMotor.h"
-#include "DaMiao.h"
 #include "IMU.h"
 #include "PID.h"
 #include "Peripheral.h"
@@ -23,6 +21,8 @@ static float v_stop[4] = {0, 0, 0, 0};
 static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed);
 
 //任务函数------
+uint8_t last_s2 = 0;
+float target_angle = 0.0f;
 void StartChassis(void * argument)
 {
   (void)argument;
@@ -30,11 +30,21 @@ void StartChassis(void * argument)
     Chassis_Solution(rc_ctl, v_tar);
     if (rc_ctl.s1 == 2 || rc_ctl.s2 == 2) {
       CanSend_DJIMotor(2, 0x200, v_stop[0], v_stop[1], v_stop[2], v_stop[3]);
+      target_angle = motor_2006.accumlate_rad_out * 57.583f;  //记录当前角度
+      CanSend_DJIMotor(1, 0x200, v_stop[0], v_stop[1], v_stop[2], v_stop[3]);
     }
     else {
       Chassis_Motor(2, v_tar);
+
+      if ((rc_ctl.s2 == 1) && (last_s2 == 3)) {
+        target_angle += (float)(36.0f * 1.0f);
+      }
+      //Set2006(800, Speed_Mode);
     }
-    Update_Info_DJIMotor(M3508_motor, 4);  //底盘电机
+    last_s2 = rc_ctl.s2;
+    Update_Info_DJIMotor(M3508_motor, 4);    //底盘电机
+    Update_Info_DJIMotor(&GM6020_motor, 1);  //yaw轴电机
+    Update_Info_DJIMotor(&motor_2006, 1);    //云台电机
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(2);
   }
@@ -44,16 +54,17 @@ void StartRemote(void * argument)
 {
   (void)argument;
   for (;;) {
-    IMU_RequestData(&hcan2, 0x03, 0x01);  //请求IMU数据
-    osDelay(1);
-    IMU_RequestData(&hcan2, 0x03, 0x02);  //请求IMU数据
-    osDelay(1);
-    IMU_RequestData(&hcan2, 0x03, 0x03);  //请求IMU数据
-    osDelay(1);
-    IMU_RequestData(&hcan2, 0x03, 0x04);  //请求IMU数据
-    osDelay(1);
     USART1_RemoteCallback();  //DT7
     USART7_RemoteCallback();  //裁判系统
+    IMU_RequestData(&hcan2, 0x03, 0x01);
+    osDelay(1);
+    IMU_RequestData(&hcan2, 0x03, 0x02);
+    osDelay(1);
+    IMU_RequestData(&hcan2, 0x03, 0x03);
+    osDelay(1);
+    IMU_RequestData(&hcan2, 0x03, 0x04);
+    osDelay(1);
+    // IMU_RequestData(&hcan2, 0x03, 0x02);
     osDelay(1);
   }
 }
@@ -82,23 +93,22 @@ static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed)
   }
 
   //映射为 m/s
-  vx_remote = (float)RC_Ctl_temp.ch3 / 120.0f * 0.7071f;  //660.0f /120.0f * 0.7071f = 3.89m/s
-  vy_remote = (float)RC_Ctl_temp.ch2 / 120.0f * 0.7071f;
+  vx_remote = (float)RC_Ctl_temp.ch3 / 130.0f * 0.7071f;  //660.0f /130.0f * 0.7071f = 3.600f m/s
+  vy_remote = (float)RC_Ctl_temp.ch2 / 130.0f * 0.7071f;
 
   //底盘最小回归角
   float ecd_angle_out_tmp = 0.0f;
   float wz_reg = 0.0f;
-  if (D_yaw.pos - D_YAW_BASE_FIRST < -3.14159f) {
-    ecd_angle_out_tmp = D_yaw.pos + 6.28318f;
+  if (GM6020_motor.ecd_angle_out - D_YAW_BASE_FIRST < -180.0f) {
+    ecd_angle_out_tmp = GM6020_motor.ecd_angle_out + 360.0f;
   }
-  else if (D_yaw.pos - D_YAW_BASE_FIRST > +3.14159f) {
-    ecd_angle_out_tmp = D_yaw.pos - 6.28318f;
+  else if (GM6020_motor.ecd_angle_out - D_YAW_BASE_FIRST > +180.0f) {
+    ecd_angle_out_tmp = GM6020_motor.ecd_angle_out - 360.0f;
   }
   else {
-    ecd_angle_out_tmp = D_yaw.pos;
+    ecd_angle_out_tmp = GM6020_motor.ecd_angle_out;
   }
-
-  if (fabs(ecd_angle_out_tmp - D_YAW_BASE_FIRST) > 0.26180f) {  //±15°之外或±15°之内且移动 则回归
+  if (fabs(ecd_angle_out_tmp - D_YAW_BASE_FIRST) > 15.0f) {  //±15°之外或±15°之内且移动 则回归
     wz_reg = PID_Calc(&wz_pid, ecd_angle_out_tmp, D_YAW_BASE_FIRST);  //底盘回归角速度 m/s
   }
   else {            //±15°之内,且不移动 则不回归
@@ -111,11 +121,11 @@ static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed)
   }
   else if (RC_Ctl_temp.ch4 < -100) {
     wz_remote = wz_reg - spin_diameter * PI * 2.0f;
+    ;
   }
   else {
     wz_remote = wz_reg;
   }
-  
   //底盘回归角及小陀螺下移动的角速度补偿
   float follow_angle =
     (ecd_angle_out_tmp - D_YAW_BASE_FIRST) / 180.0f * PI + 0.003f * wz_remote * 2 * PI;  //弧度 rad

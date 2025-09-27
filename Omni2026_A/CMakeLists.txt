@@ -52,13 +52,13 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     BSP/bsp_crc.c
     BSP/bsp_dwt.c
     Module/Peripheral.c
-    Module/DaMiao.c
     Module/DJIMotor.c
+    Module/IMU.c
     Module/PID.c
     Module/Referee.c
     Module/Power.c
-    Module/IMU.c
     User/main_task.c
+
     # Add user sources here
 )
 

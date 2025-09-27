@@ -21,7 +21,6 @@ typedef struct
 } RC_Ctl_t;
 
 extern uint8_t rx_buffer[18];
-extern uint8_t rx_usart6[20];
 extern uint8_t rawData[137];
 extern RC_Ctl_t rc_ctl;
 
