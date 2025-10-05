@@ -49,6 +49,7 @@ void StartRemote(void const* argument)
     memcpy(&array_send[0][4], &RC_Ctl.ch4, 2);
     memcpy(&array_send[0][6], &RC_Ctl.s1, 1);
     memcpy(&array_send[0][7], &RC_Ctl.s2, 1);
+
     CanSendBoard(1, 0x123, array_send[0]);
     osDelay(1);
 
