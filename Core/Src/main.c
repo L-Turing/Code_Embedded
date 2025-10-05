@@ -110,8 +110,8 @@ int main(void)
   MX_UART7_Init();
   /* USER CODE BEGIN 2 */
 
-  Can1_Init();
-  Can2_Init();
+  Can1_Filter();
+  Can2_Filter();
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 

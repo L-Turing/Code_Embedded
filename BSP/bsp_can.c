@@ -11,7 +11,7 @@
  * This function sets up the CAN2 peripheral with a specific filter configuration
  * to receive messages from the CAN bus.
  */
-void Can2_Init(void)
+void Can2_Filter(void)
 {
   // CAN_FilterTypeDef can_filter_st;
   // can_filter_st.FilterActivation = ENABLE;
@@ -55,7 +55,7 @@ void Can2_Init(void)
  * This function sets up the CAN1 peripheral with a specific filter configuration
  * to receive messages from the CAN bus.
  */
-void Can1_Init(void)
+void Can1_Filter(void)
 {
   CAN_FilterTypeDef can_filter_st;
   can_filter_st.FilterActivation = ENABLE;

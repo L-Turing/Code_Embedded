@@ -16,32 +16,22 @@
 
 static float vx_remote = 0.0f, vy_remote = 0.0f, wz_remote = 0.0f;
 static float vx = 0.0f, vy = 0.0f, wz = 0.0f;
-static float v_tar[4] = {0, 0, 0, 0};
-static float v_stop[4] = {0, 0, 0, 0};
-static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed);
+static float v_tar[4] = { 0, 0, 0, 0 };
+static float v_stop[4] = { 0, 0, 0, 0 };
+static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float* wheel_speed);
 
 //任务函数------
-uint8_t last_s2 = 0;
-float target_angle = 0.0f;
-void StartChassis(void * argument)
+void StartChassis(void* argument)
 {
   (void)argument;
   for (;;) {
     Chassis_Solution(rc_ctl, v_tar);
     if (rc_ctl.s1 == 2 || rc_ctl.s2 == 2) {
       CanSend_DJIMotor(2, 0x200, v_stop[0], v_stop[1], v_stop[2], v_stop[3]);
-      target_angle = motor_2006.accumlate_rad_out * 57.583f;  //记录当前角度
-      CanSend_DJIMotor(1, 0x200, v_stop[0], v_stop[1], v_stop[2], v_stop[3]);
     }
     else {
       Chassis_Motor(2, v_tar);
-
-      if ((rc_ctl.s2 == 1) && (last_s2 == 3)) {
-        target_angle += (float)(36.0f * 1.0f);
-      }
-      //Set2006(800, Speed_Mode);
     }
-    last_s2 = rc_ctl.s2;
     Update_Info_DJIMotor(M3508_motor, 4);    //底盘电机
     Update_Info_DJIMotor(&GM6020_motor, 1);  //yaw轴电机
     Update_Info_DJIMotor(&motor_2006, 1);    //云台电机
@@ -50,27 +40,26 @@ void StartChassis(void * argument)
   }
 }
 
-void StartRemote(void * argument)
+void StartRemote(void* argument)
 {
   (void)argument;
   for (;;) {
-    USART1_RemoteCallback();  //DT7
+    // USART1_RemoteCallback();  //DT7
     USART7_RemoteCallback();  //裁判系统
-    IMU_RequestData(&hcan2, 0x03, 0x01);
     osDelay(1);
-    IMU_RequestData(&hcan2, 0x03, 0x02);
-    osDelay(1);
-    IMU_RequestData(&hcan2, 0x03, 0x03);
-    osDelay(1);
-    IMU_RequestData(&hcan2, 0x03, 0x04);
-    osDelay(1);
+
+    // IMU_RequestData(&hcan2, 0x03, 0x01);
+    // osDelay(1);
     // IMU_RequestData(&hcan2, 0x03, 0x02);
-    osDelay(1);
+    // osDelay(1);
+    // IMU_RequestData(&hcan2, 0x03, 0x03);
+    // osDelay(1);
+    // IMU_RequestData(&hcan2, 0x03, 0x04);
+    // osDelay(1);
   }
 }
 
-extern uint32_t running_time_10ms;
-void StartUI(void * argument)
+void StartUI(void* argument)
 {
   (void)argument;
   for (;;) {
@@ -83,7 +72,7 @@ void StartUI(void * argument)
 static float wheel_diameter = 0.195f;             //全向轮直径
 static float spin_diameter = 0.42f;               //车体自旋直径
 static float Motor_Speed_Rpm_Out_Limit = 450.0f;  //电机rpm转速限制
-static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float * wheel_speed)
+static void Chassis_Solution(RC_Ctl_t RC_Ctl_temp, float* wheel_speed)
 {
   //异常值清零
   if (

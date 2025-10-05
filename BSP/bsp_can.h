@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-void Can1_Init(void);
-void Can2_Init(void);
+void Can1_Filter(void);
+void Can2_Filter(void);
 void CanSend_DJIMotor(
   uint8_t which_can, uint32_t control_id, int16_t motor1, int16_t motor2, int16_t motor3,
   int16_t motor4);
