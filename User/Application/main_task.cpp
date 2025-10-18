@@ -52,7 +52,6 @@ void StartRemote(void const* argument)
 
     CanSendBoard(1, 0x123, array_send[0]);
     osDelay(1);
-    Send_Vision(1, 1, 0, 0, 0, INS.Pitch / 57.32, INS.Roll / 57.32, INS.Yaw / 57.32, 0, 0, 0);
 
     HAL_IWDG_Refresh(&hiwdg);
   }

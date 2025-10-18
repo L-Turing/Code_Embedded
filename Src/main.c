@@ -37,6 +37,7 @@
 #include "bsp_dwt.h"
 #include "bsp_usart.h"
 #include "ins_task.h"
+#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -108,7 +109,6 @@ int main(void)
   MX_CAN2_Init();
   MX_USART6_UART_Init();
   MX_TIM4_Init();
-  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   DWT_Init(168);
   while (BMI088_init(&hspi1, 1) != BMI088_NO_ERROR);
@@ -121,9 +121,10 @@ int main(void)
   __HAL_DMA_DISABLE_IT(huart3.hdmarx, DMA_IT_HT);
   HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rc_buffer, 21);
   __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT);
- 
+
   __HAL_TIM_CLEAR_IT(&htim4, TIM_IT_UPDATE);  //清除定时器中断标志位
   HAL_TIM_Base_Start_IT(&htim4);
+  
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
@@ -216,7 +217,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     TIM4_cnt++;
     if (TIM4_cnt >= 12) {//1000/(0.5*12)=166.67Hz,
       TIM4_cnt = 0;
-
+      Send_Vision(1, 1, 0, 0, 0, INS.Pitch / 57.32, INS.Roll / 57.32, INS.Yaw / 57.32, 0, 0, 0);
       //  Send_Vision(
       //   detect_color,task_mode, reset_tracker, is_play,
       //   reserved,INS.Roll, INS.Pitch, INS.yaw, game_time,timestamp,

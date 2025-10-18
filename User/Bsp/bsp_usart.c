@@ -81,11 +81,12 @@ void Receive_Vision()
   // }
 }
 
+uint8_t bufff[sizeof(ReceivePacket)] = {0};
 void Send_Vision(
   uint8_t detect_color, uint8_t task_mode, uint8_t reset_tracker, uint8_t is_play, uint8_t reserved,
   float roll, float pitch, float yaw, uint16_t game_time, float timestamp, float bullet_speed)
 {
-  sendpakge.header = 0x5A;
+  sendpakge.header =0x5A;
   sendpakge.detect_color = detect_color;
   sendpakge.task_mode = task_mode;
   sendpakge.reset_tracker = reset_tracker;
@@ -100,14 +101,13 @@ void Send_Vision(
   sendpakge.timestamp = timestamp;
   sendpakge.bullet_speed = bullet_speed;
 
-  uint8_t buf[sizeof(ReceivePacket)] = {0};
+  static uint8_t buf[sizeof(ReceivePacket)] = {0};
     buf[0] = sendpakge.header;
     buf[1] = (sendpakge.detect_color & 0x01)
            | ((sendpakge.task_mode & 0x03) << 1)
            | ((sendpakge.reset_tracker & 0x01) << 3)
            | ((sendpakge.is_play & 0x01) << 4)
            | ((sendpakge.reserved & 0x07) << 5);
-
 
     memcpy(&buf[2], &sendpakge.roll, 4);
     memcpy(&buf[6], &sendpakge.pitch, 4);
