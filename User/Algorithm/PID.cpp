@@ -5,10 +5,10 @@
 #include "main_task.h"
 #include "math.h"
 
-static PID GM6020_pid_speed = { 24.0f, 1.0f, 0.0f, 0, 0, 0, 1500, 16000, 0, 0, 0, 0 ,0,0 };
-static PID GM6020_pid_position = { 32.0f, 0.0f, 40.0f, 0, 0, 0, 0, 3000, 0, 0, 0, 0 ,0,0 };
+static PID GM6020_pid_speed = { 20.0f, 1.0f, 0.0f, 0, 0, 0, 1500, 16000, 0, 0, 0, 0 ,0,0 };
+static PID GM6020_pid_position = { 20.0f, 0.0f, 40.0f, 0, 0, 0, 0, 3000, 0, 0, 0, 0 ,0,0 };
 
-static PID pid_2006_speed = { 18.0f, 1.0f, 0.0f, 0, 0, 0, 500, 9000, 0, 0, 0, 0,0,0 };
+static PID pid_2006_speed = { 10.0f, 1.0f, 0.0f, 0, 0, 0, 500, 9000, 0, 0, 0, 0,0,0 };
 static PID pid_2006_position = { 6.0f, 0.0f, 5.0f, 0, 0, 0, 0, 450, 0, 0, 0, 0 ,0,0 };
 
 static PID pid_left_shoot_speed = { 15.0f, 0.0f, 0.0f, 0, 0, 0, 300, 12000, 0, 0, 0, 0 ,0,0 };

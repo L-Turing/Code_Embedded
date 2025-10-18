@@ -1,11 +1,6 @@
 {
     "files.associations": {
-        "*.cpp": "cpp",
-        "*.h": "c",
-        "compare": "c",
-        "cmath": "cpp",
-        "text_encoding": "cpp",
-        "array": "cpp"
+        "*.h": "c"
     },
     "editor.formatOnSave": true,
     "[c]": {

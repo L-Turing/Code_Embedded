@@ -29,10 +29,42 @@ typedef struct
   uint8_t reserved : 3;
 } bool_sendpackge_typedef;
 
+
+typedef struct
+{
+  uint8_t header ;//0xA5
+  uint8_t state : 2;       // 0-untracking 1-tracking-aim 2-tracking-buff
+  uint8_t id : 3;          // aim: 0-outpost 6-guard 7-base
+  uint8_t can_shoot : 1;   // 0-不能射击 1-可以射击
+  uint8_t reserved : 2;
+  float pitch;             // 目标pitch角度
+  float yaw;               // 目标yaw角度
+  uint16_t checksum ;   //0
+
+}SendPacket;
+
+
+typedef struct
+{
+  uint8_t header ;    //0x5A
+
+  uint8_t detect_color : 1;  // 0-red 1-blue
+  uint8_t task_mode : 2;     // 0-auto 1-aim 2-buff // 1
+  uint8_t reset_tracker : 1; // 0
+  uint8_t is_play : 1; // 0
+  uint8_t reserved : 3;
+  float roll;
+  float pitch;
+  float yaw;
+  uint16_t game_time;  // (s) game time [0, 450] //0
+  float timestamp;  // (ms) board time //0
+  float bullet_speed;  // 弹速 (m/s) //22.0
+  uint16_t checksum ;//0
+}ReceivePacket;
+
 typedef struct
 {
   uint8_t header;
-  bool_sendpackge_typedef boolpackge;
   float roll;
   float pitch;
   float yaw;
@@ -64,8 +96,10 @@ typedef struct
 extern uint8_t rx_buffer[18];
 extern uint8_t rc_buffer[21];
 extern RC_Ctl_t RC_Ctl;
-extern sendpackge_typedef sendpakge;
-extern recepackge_typedef recepakge;
+// extern sendpackge_typedef sendpakge;
+// extern recepackge_typedef recepakge;
+extern SendPacket recepakge;
+extern ReceivePacket sendpakge;
 
 void CDC_Receive_Handle(uint8_t * Buf, uint32_t * Len);
 void Remote_CallbackHandle();

@@ -52,6 +52,7 @@ void StartRemote(void const* argument)
 
     CanSendBoard(1, 0x123, array_send[0]);
     osDelay(1);
+    Send_Vision(1, 1, 0, 0, 0, INS.Pitch / 57.32, INS.Roll / 57.32, INS.Yaw / 57.32, 0, 0, 0);
 
     HAL_IWDG_Refresh(&hiwdg);
   }
@@ -68,7 +69,8 @@ void StartGimbal(void const* argument)
   (void)argument;
   for (;;) {
     if (RC_Ctl.s1 == 1 || RC_Ctl.s1 == 3) {
-      ShootPart();
+
+      //ShootPart();
       PTZPart();
     }
     else {
@@ -107,9 +109,11 @@ void StartIMU(void const* argument)
 {
   (void)argument;
   INS_Init();
+
   for (;;) {
     INS_Task();
-    osDelay(1);
+    osDelay(2);
+
     HAL_IWDG_Refresh(&hiwdg);
   }
 }
@@ -196,9 +200,9 @@ static void PTZPart()
 {
   motor_yaw.Enable_Damiao_Motor();
   osDelay(1);
-  static float last_yaw = INS.Yaw;
+  float last_yaw = INS.Yaw;
   float t_angle = recepakge.yaw * 57.29578f - last_yaw;
-  if (recepakge.boolpackage.state) {
+  if (recepakge.state) {
     if (t_angle > 180) {
       target_yaw = t_angle - 360.0f + INS.YawTotalAngle;
     }
@@ -211,19 +215,20 @@ static void PTZPart()
     target_pitch = -recepakge.pitch * 57.29578f;
   }
   else {
-    target_pitch += RC_Ctl.ch1 / 1200.0f;
-    target_yaw -= RC_Ctl.ch0 / 1200.0f;
+    if (fabs(RC_Ctl.ch1) > 10) target_pitch += RC_Ctl.ch1 / 1200.0f;
+    if (fabs(RC_Ctl.ch0) > 10) target_yaw -= RC_Ctl.ch0 / 1200.0f;
+
     // if (RC_Ctl.ch1 > 200) {
     //   target_pitch = 20;
     // }
     // else if (RC_Ctl.ch1 < -200) {
-    //   target_pitch = -20;
+    //   target_pitch = -20; 
     // }
     // else {
     //   target_pitch = 0;
     // }
   }
-  recepakge.boolpackage.state = 0;
+  recepakge.state = 0;
 
   if (target_pitch > 40) target_pitch = 40;
   if (target_pitch < -22) target_pitch = -22;
@@ -236,6 +241,7 @@ static void PTZPart()
 }
 
 
+
 static void PTZPart_Auto()
 {
   static int8_t p_f = 1, y_f = 1;
@@ -244,7 +250,8 @@ static void PTZPart_Auto()
   osDelay(1);
   static float last_yaw = INS.Yaw;
   float t_angle = recepakge.yaw * 57.29578f - last_yaw;
-  if (recepakge.boolpackage.state) {
+  //float t_angle = recepakge.yaw * 57.29578f;
+  if (recepakge.state) {
     if (t_angle > 180) {
       target_yaw = t_angle - 360.0f + INS.YawTotalAngle;
     }
@@ -285,7 +292,7 @@ static void PTZPart_Auto()
       target_yaw += 450.0f / 1200.0f;
     }
   }
-  recepakge.boolpackage.state = 0;
+  recepakge.state = 0;
 
   if (target_pitch > 40) target_pitch = 40;
   if (target_pitch < -22) target_pitch = -22;
@@ -316,6 +323,6 @@ static void PTZPart_Disable()
   osDelay(1);
   CanSend(2, DJI, 0x200, (int16_t)(motor_friwheel_left.output), (int16_t)(motor_friwheel_right.output), 0, 0);
   osDelay(1);
-  recepakge.boolpackage.state = 0;
-  recepakge.boolpackage.can_shoot = 0;
+  recepakge.state = 0;
+  recepakge.can_shoot = 0;
 }

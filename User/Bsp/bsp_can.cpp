@@ -25,6 +25,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)  //CAN1
   uint8_t rxDATA1[8];
   HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &can_rxheader1, rxDATA1);
 
+
   if (hcan == &hcan1) {//yaw 2006 板间通信
     if (motor_yaw.motor_feedback_id == can_rxheader1.StdId) {
       memcpy(data_buffer[0], rxDATA1, 8);
@@ -38,6 +39,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)  //CAN1
 }
 
 
+\
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef* hcan)  //CAN2
 {
   CAN_RxHeaderTypeDef can_rxheader2;

@@ -108,6 +108,7 @@ int main(void)
   MX_CAN2_Init();
   MX_USART6_UART_Init();
   MX_TIM4_Init();
+  MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
   DWT_Init(168);
   while (BMI088_init(&hspi1, 1) != BMI088_NO_ERROR);
@@ -215,10 +216,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     TIM4_cnt++;
     if (TIM4_cnt >= 12) {//1000/(0.5*12)=166.67Hz,
       TIM4_cnt = 0;
-      // Send_Vision(
-      //   uint8_t detect_color, uint8_t task_mode, uint8_t reset_tracker, uint8_t is_play,
-      //   uint8_t reserved, float roll, float pitch, float yaw, uint16_t game_time, float timestamp,
-      //   float bullet_speed);
+
+      //  Send_Vision(
+      //   detect_color,task_mode, reset_tracker, is_play,
+      //   reserved,INS.Roll, INS.Pitch, INS.yaw, game_time,timestamp,
+      //   bullet_speed);
+
     }
   }
   /* USER CODE END Callback 1 */
