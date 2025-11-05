@@ -96,7 +96,10 @@ void StartGimbal(void const* argument)
     if (motor_friwheel_right.flag_connect > 300) motor_friwheel_right.flag_connect = 300;
     if (motor_yaw.flag_connect == 300 || motor_ammunition.flag_connect == 300 || motor_pitch.flag_connect == 300 ||
       motor_friwheel_left.flag_connect == 300 || motor_friwheel_right.flag_connect == 300) {
-
+      //开启报警或处理逻辑
+    }
+    else {
+      //用来关闭
     }
 
     osDelay(1);
