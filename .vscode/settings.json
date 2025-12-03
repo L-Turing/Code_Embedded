@@ -1,6 +1,18 @@
 {
     "files.associations": {
-        "*.h": "c"
+        "*.h": "c",
+        "cmath": "cpp",
+        "cstdint": "c",
+        "compare": "c",
+        "charconv": "cpp",
+        "optional": "cpp",
+        "format": "cpp",
+        "system_error": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp"
     },
     "editor.formatOnSave": true,
     "[c]": {
@@ -22,4 +34,6 @@
             "statusBarVisibility": "hidden",
         },
     },
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": [],
 }

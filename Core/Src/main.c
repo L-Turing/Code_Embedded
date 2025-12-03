@@ -29,7 +29,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "DJIMotor.h"
 #include "PID.h"
 #include "Peripheral.h"
 #include "bsp_can.h"
@@ -100,37 +99,38 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_IWDG_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM12_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
   MX_USART1_UART_Init();
-  MX_UART7_Init();
+  MX_IWDG_Init();
+  MX_USART6_UART_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
-  Can1_Filter();
-  Can2_Filter();
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+  Can1_Init();
+  Can2_Init();
+  PID_Init_Motor();
 
-  __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);   //PI0
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);   //呼吸灯
+  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);  //蜂鸣器
+  __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);  //计时
   HAL_TIM_Base_Start_IT(&htim2);
 
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rx_buffer, 18);
+  USART_Callback[1] = DT7_DR16_Handle;
+  USART_Callback[6] = PS2_Handle;
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, dt7_dr16.rx_dt7_dr16, sizeof(dt7_dr16.rx_dt7_dr16));
   __HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart7, rawData, 137);
-  __HAL_DMA_DISABLE_IT(huart7.hdmarx, DMA_IT_HT);
-
-  PID_Init();
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart6, PS2.rx_ps2_uint, sizeof(PS2.rx_ps2_uint));
+  __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT);
 
   /* USER CODE END 2 */
 
   /* Init scheduler */
-  osKernelInitialize();
-
-  /* Call init function for freertos objects (in cmsis_os2.c) */
+  osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
   MX_FREERTOS_Init();
 
   /* Start scheduler */
@@ -240,8 +240,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.

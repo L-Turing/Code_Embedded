@@ -21,8 +21,6 @@ endif()
 # Set the project name
 set(CMAKE_PROJECT_NAME TEST_A)
 
-# Include toolchain file
-include("cmake/gcc-arm-none-eabi.cmake")
 
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
@@ -47,26 +45,30 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    BSP/bsp_can.c
-    BSP/bsp_usart.c
-    BSP/bsp_crc.c
-    BSP/bsp_dwt.c
-    Module/Peripheral.c
-    Module/DJIMotor.c
-    Module/IMU.c
-    Module/PID.c
-    Module/Referee.c
-    Module/Power.c
-    User/main_task.c
-
+    User/Application/main_task.cpp
+    User/BSP/bsp_can.cpp
+    User/BSP/bsp_crc.c
+    User/BSP/bsp_dwt.c
+    User/BSP/bsp_PWM.c
+    User/BSP/bsp_usart.c
+    User/Module/Algorithm/kalman_filter.c
+    User/Module/Algorithm/PID.cpp
+    User/Module/Algorithm/QuaternionEKF.c
+    User/Module/MotorSynthesis/DaMiao.cpp
+    User/Module/MotorSynthesis/Motor.cpp
+    User/Module/MotorSynthesis/SteeringGear.cpp
+    User/Module/Peripheral/IMU.c
+    User/Module/Peripheral/Peripheral.cpp
     # Add user sources here
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    BSP
-    Module
-    User
+    User/Application
+    User/BSP
+    User/Module/Algorithm 
+    User/Module/MotorSynthesis 
+    User/Module/Peripheral
     # Add user defined include paths
 )
 

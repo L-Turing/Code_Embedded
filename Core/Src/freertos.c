@@ -68,12 +68,12 @@ const osThreadAttr_t RemoteTask_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for UITask */
-osThreadId_t UITaskHandle;
-const osThreadAttr_t UITask_attributes = {
-  .name = "UITask",
+/* Definitions for OthersTask */
+osThreadId_t OthersTaskHandle;
+const osThreadAttr_t OthersTask_attributes = {
+  .name = "OthersTask",
   .stack_size = 1024 * 4,
-  .priority = (osPriority_t) osPriorityHigh1,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -84,7 +84,7 @@ const osThreadAttr_t UITask_attributes = {
 void StartDefaultTask(void *argument);
 void StartChassis(void *argument);
 void StartRemote(void *argument);
-void StartUI(void *argument);
+void StartOthers(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -125,8 +125,8 @@ void MX_FREERTOS_Init(void) {
   /* creation of RemoteTask */
   RemoteTaskHandle = osThreadNew(StartRemote, NULL, &RemoteTask_attributes);
 
-  /* creation of UITask */
-  UITaskHandle = osThreadNew(StartUI, NULL, &UITask_attributes);
+  /* creation of OthersTask */
+  OthersTaskHandle = osThreadNew(StartOthers, NULL, &OthersTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -194,22 +194,22 @@ __weak void StartRemote(void *argument)
   /* USER CODE END StartRemote */
 }
 
-/* USER CODE BEGIN Header_StartUI */
+/* USER CODE BEGIN Header_StartOthers */
 /**
-* @brief Function implementing the UITask thread.
+* @brief Function implementing the OthersTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartUI */
-__weak void StartUI(void *argument)
+/* USER CODE END Header_StartOthers */
+__weak void StartOthers(void *argument)
 {
-  /* USER CODE BEGIN StartUI */
+  /* USER CODE BEGIN StartOthers */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartUI */
+  /* USER CODE END StartOthers */
 }
 
 /* Private application code --------------------------------------------------*/

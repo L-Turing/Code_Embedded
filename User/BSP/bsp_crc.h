@@ -3,7 +3,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // DEBUG
+#endif
 
 #include "main.h"
 
@@ -19,6 +19,6 @@ uint16_t Get_CRC16_Check_Sum(uint8_t *pchMessage, uint32_t dwLength, uint16_t wC
 
 #ifdef __cplusplus
 }
-#endif // DEBUG
+#endif
 
 #endif
