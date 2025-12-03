@@ -109,6 +109,7 @@ int main(void)
   MX_CAN2_Init();
   MX_USART6_UART_Init();
   MX_TIM4_Init();
+  
   /* USER CODE BEGIN 2 */
   DWT_Init(168);
   while (BMI088_init(&hspi1, 1) != BMI088_NO_ERROR);
