@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#include "Motor.h"
 #include "DaMiao.h"
 #include "FreeRTOS.h"
+#include "Motor.h"
 #include "Referee.h"
 #include "bsp_can.h"
 #include "bsp_crc.h"
@@ -13,8 +13,8 @@
 #include "cmsis_os.h"
 #include "ins_task.h"
 #include "iwdg.h"
-#include "string.h"
 #include "math.h"
+#include "string.h"
 #include "task.h"
 
 DaMiaoMotor_Class motor_yaw(which_cans::can1, motor_types::DaMiao4310, 0X01, 0X10);
@@ -25,7 +25,7 @@ DJIMotor_Class motor_friwheel_right(which_cans::can2, motor_types::M3508, 0X200,
 
 static void ShootHeat(
   uint16_t shoot_heat_data1, uint16_t shoot_heat_data2, uint16_t shoot_cooling,
-  uint16_t shoot_heat_limit, float& shoot_freq);
+  uint16_t shoot_heat_limit, float & shoot_freq);
 static void ShootPart();
 static void PTZPart();
 static void PTZPart_Auto();
@@ -34,14 +34,14 @@ static void PTZPart_Disable();
 /*
   L0:0x123 遥控器
 */
-uint8_t array_send[6][8] = { 0 };
-uint8_t array_receive[6][8] = { 0 };
-void StartRemote(void const* argument)
+uint8_t array_send[6][8] = {0};
+uint8_t array_receive[6][8] = {0};
+void StartRemote(void const * argument)
 {
   (void)argument;
   for (;;) {
     Remote_CallbackHandle();  //DT7:约70Hz  图传约30Hz
-    Receive_Vision();  //来自上位机
+    Receive_Vision();         //来自上位机
     osDelay(1);
 
     memcpy(&array_send[0][0], &RC_Ctl.ch3, 2);
@@ -62,13 +62,13 @@ static uint8_t last_s2 = 0;
 static float shoot_freq_t_dr = 8500.0f;
 static float target_pitch = 0.0f, target_yaw = 0.0f, target_angle = 0.0f;
 float referee_shoot_speed = 22.0f;
-uint16_t referee_shoot_heat1, referee_shoot_heat2, referee_shoot_cooling, referee_shoot_heat_limit, referee_color;
-void StartGimbal(void const* argument)
+uint16_t referee_shoot_heat1, referee_shoot_heat2, referee_shoot_cooling, referee_shoot_heat_limit,
+  referee_color;
+void StartGimbal(void const * argument)
 {
   (void)argument;
   for (;;) {
     if (RC_Ctl.s1 == 1 || RC_Ctl.s1 == 3) {
-
       //ShootPart();
       PTZPart();
     }
@@ -94,8 +94,10 @@ void StartGimbal(void const* argument)
     if (motor_pitch.flag_connect > 300) motor_pitch.flag_connect = 300;
     if (motor_friwheel_left.flag_connect > 300) motor_friwheel_left.flag_connect = 300;
     if (motor_friwheel_right.flag_connect > 300) motor_friwheel_right.flag_connect = 300;
-    if (motor_yaw.flag_connect == 300 || motor_ammunition.flag_connect == 300 || motor_pitch.flag_connect == 300 ||
-      motor_friwheel_left.flag_connect == 300 || motor_friwheel_right.flag_connect == 300) {
+    if (
+      motor_yaw.flag_connect == 300 || motor_ammunition.flag_connect == 300 ||
+      motor_pitch.flag_connect == 300 || motor_friwheel_left.flag_connect == 300 ||
+      motor_friwheel_right.flag_connect == 300) {
       //开启报警或处理逻辑
     }
     else {
@@ -107,7 +109,7 @@ void StartGimbal(void const* argument)
   }
 }
 
-void StartIMU(void const* argument)
+void StartIMU(void const * argument)
 {
   (void)argument;
   INS_Init();
@@ -116,6 +118,8 @@ void StartIMU(void const* argument)
     INS_Task();
     osDelay(2);
 
+    Send_Vsp();
+    osDelay(8);
     HAL_IWDG_Refresh(&hiwdg);
   }
 }
@@ -125,7 +129,7 @@ void StartIMU(void const* argument)
 //热量控制
 static void ShootHeat(
   uint16_t shoot_heat_data1, uint16_t shoot_heat_data2, uint16_t shoot_cooling,
-  uint16_t shoot_heat_limit, float& shoot_freq)
+  uint16_t shoot_heat_limit, float & shoot_freq)
 {
   uint16_t heat_remain = shoot_heat_limit - shoot_heat_data1;
   if (heat_remain >= 100) {
@@ -133,8 +137,7 @@ static void ShootHeat(
   }
   else if ((heat_remain > 40) && (heat_remain < 100)) {
     float shoot_frequency =
-      (15 * (40 - heat_remain) + (float)(shoot_cooling) / 10.0f * (heat_remain - 100)) /
-      (40 - 100);
+      (15 * (40 - heat_remain) + (float)(shoot_cooling) / 10.0f * (heat_remain - 100)) / (40 - 100);
     if (shoot_frequency > 18) shoot_frequency = 18.0f;
     shoot_freq = shoot_frequency / 12 * 60 * 108;
   }
@@ -150,9 +153,11 @@ static void ShootHeat(
 
 static void ShootPart()
 {
-  static int8_t motor_ammunition_flag_init = 0; //初始化部分
+  static int8_t motor_ammunition_flag_init = 0;  //初始化部分
   if (!motor_ammunition_flag_init) {
-    while (!motor_ammunition.flag_connect) { osDelay(10); }
+    while (!motor_ammunition.flag_connect) {
+      osDelay(10);
+    }
     motor_ammunition_flag_init = 1;
     target_angle = motor_ammunition.accumlate_rad_out * 57.2958f;
   }
@@ -172,7 +177,9 @@ static void ShootPart()
     //连发  && (recepakge.boolpackage.can_shoot == 1)
     if (RC_Ctl.s1 == 1 && motor_ammunition.pid_speed->Locked_Judge == 0) {
       if (RC_Ctl.s2 == 1) {
-        ShootHeat(referee_shoot_heat1, referee_shoot_heat2, referee_shoot_cooling, referee_shoot_heat_limit, shoot_freq_t_dr);
+        ShootHeat(
+          referee_shoot_heat1, referee_shoot_heat2, referee_shoot_cooling, referee_shoot_heat_limit,
+          shoot_freq_t_dr);
         //motor_ammunition.SetAmmunition(shoot_freq_t_dr, motor_control_modes::Speed_Mode);
         motor_ammunition.SetAmmunition(6000, motor_control_modes::Speed_Mode);
       }
@@ -182,7 +189,6 @@ static void ShootPart()
     //堵转保护，电机反转
     if (motor_ammunition.pid_speed->Locked_Judge == 1)
       motor_ammunition.SetAmmunition(-1000, motor_control_modes::Speed_Mode);
-
   }
   else {
     target_angle = motor_ammunition.accumlate_rad_out * 57.2958f;  //立刻停止在当前角度
@@ -224,7 +230,7 @@ static void PTZPart()
     //   target_pitch = 20;
     // }
     // else if (RC_Ctl.ch1 < -200) {
-    //   target_pitch = -20; 
+    //   target_pitch = -20;
     // }
     // else {
     //   target_pitch = 0;
@@ -241,8 +247,6 @@ static void PTZPart()
   CanSend(2, DJI, motor_pitch.motor_send_id, (int16_t)(motor_pitch.output), 0, 0, 0);
   osDelay(1);
 }
-
-
 
 static void PTZPart_Auto()
 {
@@ -323,7 +327,9 @@ static void PTZPart_Disable()
   osDelay(1);
   CanSend(1, DJI, motor_ammunition.motor_send_id, 0, 0, 0, 0);
   osDelay(1);
-  CanSend(2, DJI, 0x200, (int16_t)(motor_friwheel_left.output), (int16_t)(motor_friwheel_right.output), 0, 0);
+  CanSend(
+    2, DJI, 0x200, (int16_t)(motor_friwheel_left.output), (int16_t)(motor_friwheel_right.output), 0,
+    0);
   osDelay(1);
   recepakge.state = 0;
   recepakge.can_shoot = 0;

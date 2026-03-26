@@ -218,7 +218,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     TIM4_cnt++;
     if (TIM4_cnt >= 12) {//1000/(0.5*12)=166.67Hz,
       TIM4_cnt = 0;
-      Send_Vision(1, 1, 0, 0, 0, INS.Pitch / 57.32, INS.Roll / 57.32, INS.Yaw / 57.32, 0, 0, 0);
+      // Send_Vision(1, 1, 0, 0, 0, INS.Pitch / 57.32, INS.Roll / 57.32, INS.Yaw / 57.32, 0, 0, 0);
       //  Send_Vision(
       //   detect_color,task_mode, reset_tracker, is_play,
       //   reserved,INS.Roll, INS.Pitch, INS.yaw, game_time,timestamp,

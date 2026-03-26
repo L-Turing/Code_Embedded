@@ -9,6 +9,7 @@
 #include "string.h"
 #include "usart.h"
 #include "usbd_cdc_if.h"
+#include "INS_task.h"
 uint8_t rx_buffer[18];
 uint8_t rc_buffer[21];
 RC_Ctl_t RC_Ctl;
@@ -17,6 +18,30 @@ static uint8_t Buf_temp[12] = { 0 };
 // recepackge_typedef recepakge;
 SendPacket recepakge;
 ReceivePacket sendpakge;
+
+T_Packet packet;         
+void Send_Vsp(){
+  packet.header = 0x10;
+  packet.state = 1;
+  packet.yaw = INS.Yaw;
+  packet.pitch = INS.Pitch;
+  packet.roll = INS.Roll;
+  packet.acc_x = INS.Accel[X];
+  packet.acc_y = INS.Accel[Y];
+  packet.acc_z = INS.Accel[Z];
+
+  memcpy(packet.datatx_all_u8, &packet.header, 1);
+  memcpy(&packet.datatx_all_u8[1], &packet.state, 1);
+  memcpy(&packet.datatx_all_u8[2], &packet.yaw, sizeof(float));
+  memcpy(&packet.datatx_all_u8[6], &packet.pitch, sizeof(float));
+  memcpy(&packet.datatx_all_u8[10], &packet.roll, sizeof(float));
+  memcpy(&packet.datatx_all_u8[14], &packet.acc_x, sizeof(float));
+  memcpy(&packet.datatx_all_u8[18], &packet.acc_y, sizeof(float));
+  memcpy(&packet.datatx_all_u8[22], &packet.acc_z, sizeof(float));
+
+  CDC_Transmit_FS(packet.datatx_all_u8, sizeof(packet.datatx_all_u8));
+}
+
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t Size)
 {
@@ -81,7 +106,6 @@ void Receive_Vision()
   // }
 }
 
-uint8_t bufff[sizeof(ReceivePacket)] = {0};
 void Send_Vision(
   uint8_t detect_color, uint8_t task_mode, uint8_t reset_tracker, uint8_t is_play, uint8_t reserved,
   float roll, float pitch, float yaw, uint16_t game_time, float timestamp, float bullet_speed)

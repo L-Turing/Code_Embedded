@@ -10,6 +10,22 @@ extern "C" {
 
 typedef struct
 {
+  uint8_t header;
+  uint8_t state;   
+  float yaw;               // 目标yaw角度   
+  float pitch;             // 目标pitch角度
+  float roll;              // 目标roll角度
+  float acc_x;             // 加速度x轴
+  float acc_y;             // 加速度y轴
+  float acc_z;             // 加速度z轴
+  uint8_t datatx_all_u8[26];
+} T_Packet;
+extern T_Packet packet;
+extern void Send_Vsp();
+
+
+typedef struct
+{
   int16_t ch0;
   int16_t ch1;
   int16_t ch2;
