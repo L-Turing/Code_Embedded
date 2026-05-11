@@ -1,11 +1,13 @@
 #include "bsp_usart.h"
 
 #include "Peripheral.h"
+#include "imu.h"
 #include "main.h"
 #include "main_task.h"
 #include "stdlib.h"
 #include "string.h"
 #include "usart.h"
+#include "usbd_cdc_if.h"
 
 DT7_DR16_t dt7_dr16;
 PS2_t PS2;
@@ -28,6 +30,7 @@ void PS2_Handle()
 {
   HAL_UARTEx_ReceiveToIdle_DMA(&huart6, PS2.rx_ps2_uint, sizeof(PS2.rx_ps2_uint));
   __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT);
+  PS2.ps2_online = 0;
 
   memcpy(PS2.frame_header, PS2.rx_ps2_uint, 2);
   memcpy(&PS2.operation_code, PS2.rx_ps2_uint + 2, 1);
@@ -89,10 +92,55 @@ void DT7_DR16_Handle()
   dt7_dr16.s2 = ((dt7_dr16.rx_dt7_dr16[5] >> 4) & 0x0003);
 }
 
-static uint8_t Buf_temp[20] = {0};
+static uint8_t Buf_temp[10] = {0};
 void CDC_Receive_Handle(uint8_t * Buf, uint32_t * Len)
 {
   for (uint32_t lenth = 0; lenth < *Len; lenth++) {
     Buf_temp[lenth] = Buf[lenth];
   }
+}
+
+//0x11 0xFF:来自上位机的指令，识别到图像，向图像方向运动
+//0x11 0xFE:来自上位机的指令，未识别到图像，导航随机运动
+//0x11 0xFD:来自下位机的指令，通信失败
+S_Packet s_packet;
+void Send_Vsp()
+{
+  s_packet.header = 0x10;
+  s_packet.state = 0x01;
+  s_packet.yaw = imu.yaw;
+  s_packet.pitch = imu.pitch;
+  s_packet.roll = imu.roll;
+  s_packet.acc_x = imu.accel[0];
+  s_packet.acc_y = imu.accel[1];
+  s_packet.acc_z = imu.accel[2];
+
+  memcpy(s_packet.datatx_all_u8, &s_packet.header, 1);
+  memcpy(&s_packet.datatx_all_u8[1], &s_packet.state, 1);
+  memcpy(&s_packet.datatx_all_u8[2], &s_packet.yaw, sizeof(float));
+  memcpy(&s_packet.datatx_all_u8[6], &s_packet.pitch, sizeof(float));
+  memcpy(&s_packet.datatx_all_u8[10], &s_packet.roll, sizeof(float));
+  memcpy(&s_packet.datatx_all_u8[14], &s_packet.acc_x, sizeof(float));
+  memcpy(&s_packet.datatx_all_u8[18], &s_packet.acc_y, sizeof(float));
+  memcpy(&s_packet.datatx_all_u8[22], &s_packet.acc_z, sizeof(float));
+
+  CDC_Transmit_FS(s_packet.datatx_all_u8, sizeof(s_packet.datatx_all_u8));
+}
+
+R_Packet r_packet;
+void Receive_Vsp()
+{
+  if ((Buf_temp[0] == 0x11) && (Buf_temp[1] == 0xFF || Buf_temp[1] == 0xFE)) {//通信成功，解析数据
+    memcpy(&r_packet.header, Buf_temp, 1);
+    memcpy(&r_packet.state, Buf_temp + 1, 1);
+    memcpy(&r_packet.v, Buf_temp + 2, sizeof(float));
+    memcpy(&r_packet.yaw, Buf_temp + 6, sizeof(float));
+  }
+  else {//通信失败，清零数据
+    r_packet.header = 0x11;
+    r_packet.state = 0xFD;
+    r_packet.v = 0.0f;
+    r_packet.yaw = 0.0f;
+  }
+  memset(Buf_temp, 0, sizeof(Buf_temp));//清零接收缓冲区，准备下一次接收
 }

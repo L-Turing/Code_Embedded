@@ -5,8 +5,8 @@
 #include "main_task.h"
 #include "math.h"
 
-static PID pid_leftwheel_speed = {10.0f, 0.0f, 0.0f, 0, 0, 0, 0, 9000, 0, 0, 0, 0, 0, 0};
-static PID pid_rightwheel_speed = {10.0f, 0.0f, 0.0f, 0, 0, 0, 0, 9000, 0, 0, 0, 0, 0, 0};
+static PID pid_leftwheel_speed = {12.0f, 0.0f, 0.0f, 0, 0, 0, 0, 9000, 0, 0, 0, 0, 0, 0};
+static PID pid_rightwheel_speed = {12.0f, 0.0f, 0.0f, 0, 0, 0, 0, 9000, 0, 0, 0, 0, 0, 0};
 
 void PID_Init_Motor()
 {

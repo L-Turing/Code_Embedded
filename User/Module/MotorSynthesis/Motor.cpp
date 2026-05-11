@@ -30,8 +30,7 @@ void Motor_Class::Update_Info()
       this->reduction_ratio = 19.0f;
       break;
     case motor_types::M2006:
-      // this->reduction_ratio = 36.0f;
-      this->reduction_ratio = 19.2f;
+      this->reduction_ratio = 36.0f;
       break;
     case motor_types::GM6020:
       this->reduction_ratio = 1.0f;
@@ -90,6 +89,7 @@ void DJIMotor_Class::Update_Status(uint8_t * canbuf_receive)
   this->last_ecd = this->ecd;
   this->ecd = (int16_t)((canbuf_receive[0] << 8) | canbuf_receive[1]);
   this->speed_rpm_rotor = (int16_t)((canbuf_receive[2] << 8) | canbuf_receive[3]);  // 转子转速 rpm
+
   this->given_current = (int16_t)((canbuf_receive[4] << 8) | canbuf_receive[5]);
   this->temperature = (int8_t)(canbuf_receive[6]);
 

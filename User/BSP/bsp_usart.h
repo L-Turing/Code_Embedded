@@ -56,6 +56,7 @@ typedef struct
   uint16_t serial_number;  //32
   uint16_t verify;         //33
 
+  uint16_t ps2_online;  //离线计数
 } PS2_t;
 
 typedef struct
@@ -72,6 +73,32 @@ typedef struct
   uint8_t ps2_mode_now;
   uint8_t ps2_mode_last;
 } Flag_t;
+
+typedef struct
+{
+  uint8_t header;
+  uint8_t state;
+  float yaw;    // 目标yaw角度
+  float pitch;  // 目标pitch角度
+  float roll;   // 目标roll角度
+  float acc_x;  // 加速度x轴
+  float acc_y;  // 加速度y轴
+  float acc_z;  // 加速度z轴
+  uint8_t datatx_all_u8[26];
+} S_Packet;
+
+typedef struct
+{
+  uint8_t header;
+  uint8_t state;
+  float v;    // 目标速度
+  float yaw;  // 目标yaw角度
+} R_Packet;
+extern S_Packet s_packet;
+extern R_Packet r_packet;
+
+extern void Send_Vsp();
+extern void Receive_Vsp();
 
 extern DT7_DR16_t dt7_dr16;
 extern PS2_t PS2;

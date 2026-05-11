@@ -30,6 +30,9 @@ public:
   uint32_t pulse_valid_min;
   uint32_t pulse_valid_max;
 
+  float angle_abs_set{};
+  float angle_accu_set{};
+
   explicit Servo(
     TIM_HandleTypeDef * tim_pwmHandle_t, uint8_t Channel_t, float angle_min_t, float angle_max_t,
     uint32_t pulse_valid_min_t, uint32_t pulse_valid_max_t)
@@ -42,7 +45,7 @@ public:
   {
   }
 
-  void Servo_Control(uint16_t angle_set);
+  void Servo_Control();
 };
 
 #endif

@@ -68,12 +68,26 @@ const osThreadAttr_t RemoteTask_attributes = {
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for OthersTask */
-osThreadId_t OthersTaskHandle;
-const osThreadAttr_t OthersTask_attributes = {
-  .name = "OthersTask",
+/* Definitions for ServoTask */
+osThreadId_t ServoTaskHandle;
+const osThreadAttr_t ServoTask_attributes = {
+  .name = "ServoTask",
   .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityHigh,
+};
+/* Definitions for AnalogUpperTask */
+osThreadId_t AnalogUpperTaskHandle;
+const osThreadAttr_t AnalogUpperTask_attributes = {
+  .name = "AnalogUpperTask",
+  .stack_size = 1024 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for AnalogLowerTask */
+osThreadId_t AnalogLowerTaskHandle;
+const osThreadAttr_t AnalogLowerTask_attributes = {
+  .name = "AnalogLowerTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -84,7 +98,9 @@ const osThreadAttr_t OthersTask_attributes = {
 void StartDefaultTask(void *argument);
 void StartChassis(void *argument);
 void StartRemote(void *argument);
-void StartOthers(void *argument);
+void StartServo(void *argument);
+void StartAnalogUpper(void *argument);
+void StartAnalogLower(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -125,8 +141,14 @@ void MX_FREERTOS_Init(void) {
   /* creation of RemoteTask */
   RemoteTaskHandle = osThreadNew(StartRemote, NULL, &RemoteTask_attributes);
 
-  /* creation of OthersTask */
-  OthersTaskHandle = osThreadNew(StartOthers, NULL, &OthersTask_attributes);
+  /* creation of ServoTask */
+  ServoTaskHandle = osThreadNew(StartServo, NULL, &ServoTask_attributes);
+
+  /* creation of AnalogUpperTask */
+  AnalogUpperTaskHandle = osThreadNew(StartAnalogUpper, NULL, &AnalogUpperTask_attributes);
+
+  /* creation of AnalogLowerTask */
+  AnalogLowerTaskHandle = osThreadNew(StartAnalogLower, NULL, &AnalogLowerTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -194,22 +216,58 @@ __weak void StartRemote(void *argument)
   /* USER CODE END StartRemote */
 }
 
-/* USER CODE BEGIN Header_StartOthers */
+/* USER CODE BEGIN Header_StartServo */
 /**
-* @brief Function implementing the OthersTask thread.
+* @brief Function implementing the ServoTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartOthers */
-__weak void StartOthers(void *argument)
+/* USER CODE END Header_StartServo */
+__weak void StartServo(void *argument)
 {
-  /* USER CODE BEGIN StartOthers */
+  /* USER CODE BEGIN StartServo */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartOthers */
+  /* USER CODE END StartServo */
+}
+
+/* USER CODE BEGIN Header_StartAnalogUpper */
+/**
+* @brief Function implementing the AnalogUpperTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartAnalogUpper */
+__weak void StartAnalogUpper(void *argument)
+{
+  /* USER CODE BEGIN StartAnalogUpper */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartAnalogUpper */
+}
+
+/* USER CODE BEGIN Header_StartAnalogLower */
+/**
+* @brief Function implementing the AnalogLowerTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartAnalogLower */
+__weak void StartAnalogLower(void *argument)
+{
+  /* USER CODE BEGIN StartAnalogLower */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartAnalogLower */
 }
 
 /* Private application code --------------------------------------------------*/

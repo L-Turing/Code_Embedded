@@ -2,12 +2,12 @@
 
 #include <iostream>
 
+#include "IMU.h"
 #include "Motor.h"
 #include "can.h"
 #include "main.h"
 #include "main_task.h"
 #include "string.h"
-
 uint8_t data_can_receive[16][8] = {0};
 uint8_t data_can_send[16][8] = {0};
 /*
@@ -42,20 +42,24 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef * hcan)  //CAN2
   HAL_CAN_GetRxMessage(&hcan2, CAN_RX_FIFO1, &can_rxheader2, rxDATA2);
 
   if (hcan == &hcan2) {
+    if (imu.mst_id == can_rxheader2.StdId) {
+      imu.imu_online = 0;
+      IMU_UpdateData(rxDATA2);
+    }
   }
 }
 
-//标准列表模式
+//全通过滤器
 void Can1_Init(void)
 {
   CAN_FilterTypeDef can_filter_st;
   can_filter_st.FilterActivation = ENABLE;
-  can_filter_st.FilterMode = CAN_FILTERMODE_IDLIST;
+  can_filter_st.FilterMode = CAN_FILTERMODE_IDMASK;
   can_filter_st.FilterScale = CAN_FILTERSCALE_16BIT;
-  can_filter_st.FilterIdHigh = 0x201 << 5;
-  can_filter_st.FilterIdLow = 0x202 << 5;
-  can_filter_st.FilterMaskIdHigh = 0x203 << 5;
-  can_filter_st.FilterMaskIdLow = 0x204 << 5;
+  can_filter_st.FilterIdHigh = 0x0000;
+  can_filter_st.FilterIdLow = 0x0000;
+  can_filter_st.FilterMaskIdHigh = 0x0000;
+  can_filter_st.FilterMaskIdLow = 0x0000;
   can_filter_st.FilterBank = 0;
   can_filter_st.FilterFIFOAssignment = CAN_RX_FIFO0;
   can_filter_st.SlaveStartFilterBank = 14;

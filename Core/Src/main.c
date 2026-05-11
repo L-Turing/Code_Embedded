@@ -21,7 +21,9 @@
 #include "cmsis_os.h"
 #include "can.h"
 #include "dma.h"
+#include "fatfs.h"
 #include "iwdg.h"
+#include "sdio.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_device.h"
@@ -108,13 +110,21 @@ int main(void)
   MX_IWDG_Init();
   MX_USART6_UART_Init();
   MX_TIM5_Init();
+  MX_TIM4_Init();
+  MX_SDIO_SD_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
   Can1_Init();
   Can2_Init();
   PID_Init_Motor();
 
-  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);   //PI0
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);  //PI0
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);  //PH12
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);  //PH11
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);  //PH10
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);  //PD15
+
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);   //呼吸灯
   HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);  //蜂鸣器
   __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);  //计时
@@ -212,9 +222,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   static uint16_t TIM2_Cnt = 0;
   if (htim->Instance == TIM2) {  //1ms一次中断
     TIM2_Cnt++;
-    if (TIM2_Cnt >= 10) {
+    if (TIM2_Cnt >= 9) {  //10ms
       TIM2_Cnt = 0;
       running_time_10ms++;
+      Send_Vsp();     //发送数据到上位机
+      Receive_Vsp();  //接收来自上位机的数据
     }
   }
   /* USER CODE END Callback 0 */
