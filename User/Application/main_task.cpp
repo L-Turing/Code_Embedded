@@ -36,8 +36,8 @@ Servo servo_pitch2(&htim5, TIM_CHANNEL_2, -180, 180, 250, 1250);  //PH11
 Servo servo_pitch3(&htim5, TIM_CHANNEL_1, -180, 180, 250, 1250);  //PH10
 Servo servo_test(&htim4, TIM_CHANNEL_4, -180, 180, 250, 1250);    //PD15
 
-static float wheel_speed[2] = {0.0f, 0.0f};  //电机输出轴转速 rpm
-static float vx_temp = 0.0f, z_temp = 0.0f;  //临时速度变量 临时位置变量
+static float wheel_speed[2] = {0.0f, 0.0f};             //电机输出轴转速 rpm
+static float vx_temp = 0.0f, z_temp[2] = {0.0f, 0.0f};  //临时速度变量 临时位置变量
 //底盘运动学解算
 PID wz_pid = {0.4f, 0.002f, 0.0f, 0, 0, 0, 0.16f, 3.0f, 0, 0, 0, 0, 0, 0};
 
@@ -82,15 +82,16 @@ static void OnlineJudge()
   }
 }
 
-static void Chassis_Solution(float vx, float vy, float wz_)  //m/s m/s 度
+static void Chassis_Solution(float vx, float vy, const float (&wz_)[2])  //m/s m/s 度
 {
   static float wz = 0.0f;
   if (fabs(vx) > 3.0f || fabs(vy) > 3.0f) {  //异常值清零
     vx = vy = 0.0f;
   }
+  if (flag.ps2_mode == 0) wz = PID_Calc(&wz_pid, imu.yaw_total, wz_[0]);
+  if (flag.ps2_mode == 1) wz = PID_Calc(&wz_pid, imu.yaw, wz_[1]);
 
-  wz = PID_Calc(&wz_pid, imu.yaw_total, wz_);  //根据角度误差计算辅助角速度
-  if (imu.imu_online >= 500) wz = 0.0f;        //IMU离线时辅助速度清零
+  if (imu.imu_online >= 500) wz = 0.0f;  //IMU离线时辅助速度清零
 
   // wz = 0.0f;  //暂时不使用陀螺仪反馈，直接用遥控器输入的角速度
   wheel_speed[0] = (-vx - wz * Wheel_Base / 2.0f) / (Wheel_Radius * 2.0f * 3.1416f) * 60.0f;
@@ -138,32 +139,25 @@ void StartChassis(void * argument)
             vx_temp = 0.0f;
 
           if (PS2.right_y[0] && !PS2.right_y[1])
-            z_temp += 0.1f;
+            z_temp[0] += 0.1f;
           else if (!PS2.right_y[0] && PS2.right_y[1])
-            z_temp -= 0.1f;
+            z_temp[0] -= 0.1f;
 
           SignalMark(type_signal::LED_R_ON);
           break;
 
         case 1:  //导航
-                 // if (r_packet.v > 0.1f)
-                 //   vx_temp = 0.5f;
-                 // else if (r_packet.v < -0.1f)
-                 //   vx_temp = -0.5f;
-                 // else
-                 //   vx_temp = 0.0f;
-                 // if (r_packet.yaw > 0.1f)
-                 //   z_temp += 0.1f;
-                 // else if (r_packet.yaw < -0.1f)
-                 //   z_temp -= 0.1f;
-
-          //模拟量测试
-          //转动部分因为改变了z_temp的值，此处不用管，下方底盘解算会自动执行
-          //位置部分根据a_packet的flag状态机执行，flag=0未开始，flag=1执行转动，flag=2转动完成执行位置，flag=3位置完成
-          if (a_packet[i_a].flag == 2)  //角度完成，执行位置控制
-            vx_temp = 0.5f;             //固定速度
+          if (r_packet.v > 0.1f)
+            vx_temp = 0.5f;
+          else if (r_packet.v < -0.1f)
+            vx_temp = -0.5f;
           else
             vx_temp = 0.0f;
+
+          // if (fabs(r_packet.yaw_tar) < 0.1f)
+          //   z_temp[1] = 0.0f;
+          // else
+          z_temp[1] = r_packet.yaw_tar;
 
           SignalMark(type_signal::LED_R_Breathe_ON);
           break;
@@ -198,10 +192,16 @@ void StartRemote(void * argument)
     osDelay(1);
     imu_request_accel();
     osDelay(1);
+
     if (imu.yaw - imu.yaw_last > 180.0f) imu.yaw_cirnum--;
     if (imu.yaw - imu.yaw_last < -180.0f) imu.yaw_cirnum++;
     imu.yaw_total = imu.yaw + imu.yaw_cirnum * 360.0f;
     imu.yaw_last = imu.yaw;
+
+    // if (r_packet.yaw_ros - r_packet.yaw_ros_last > 180.0f) r_packet.yaw_ros_count--;
+    // if (r_packet.yaw_ros - r_packet.yaw_ros_last < -180.0f) r_packet.yaw_ros_count++;
+    // r_packet.yaw_ros_total = r_packet.yaw_ros + r_packet.yaw_ros_count * 360.0f;
+    // r_packet.yaw_ros_last = r_packet.yaw_ros;
 
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(2);
@@ -221,64 +221,14 @@ void StartAnalogLower(void * argument)
 {
   (void)argument;
   for (;;) {
-    if (flag.ps2_start == 0 && flag.ps2_mode == 1) {  //导航模式且未开始，执行模拟量测试
-      if (a_packet[i_a].flag > 100) return;           //终点
-
-      if (a_packet[i_a].flag == 0) {
-        a_packet[i_a].flag = 1;              //开始执行
-        z_temp += a_packet[i_a].analog_yaw;  //更新目标角度
-        a_packet[i_a].analog_step_rad =
-          motor_leftwheel.accumlate_rad_out + a_packet[i_a].analog_step_rad;
-        a_packet[i_a].analog_step_rad =
-          motor_leftwheel.accumlate_rad_out - a_packet[i_a].analog_step_rad;
-      }
-
-      if (fabs(imu.yaw_total - z_temp) < 2.0f && a_packet[i_a].flag == 1)  //接近目标角度
-        a_packet[i_a].flag = 2;                                            //角度完成
-
-      if (
-        fabs(motor_leftwheel.accumlate_rad_out - a_packet[i_a].analog_step_rad) < 0.26f &&
-        fabs(motor_rightwheel.accumlate_rad_out - a_packet[i_a].analog_step_rad) < 0.26f &&
-        a_packet[i_a].flag == 2)  //接近目标位置且转动已完成 15度误差约0.26弧度
-        a_packet[i_a].flag = 3;
-
-      if (a_packet[i_a].flag == 3) {  //位置完成
-        i_a++;
-        osDelay(1500);  //完成一个数据包后等待1.5秒再执行下一个
-      }
-    }
-
     HAL_IWDG_Refresh(&hiwdg);
-    osDelay(2);
+    osDelay(100);
   }
 }
 
 void StartAnalogUpper(void * argument)
 {
   (void)argument;
-  a_packet[0] = {-90, 2, 2.0 / Wheel_Radius, 0};
-  a_packet[1] = {+90, 1, 1.0 / Wheel_Radius, 0};
-  a_packet[2] = {+90, 2, 2.0 / Wheel_Radius, 0};
-  a_packet[3] = {-90, 1, 1.0 / Wheel_Radius, 0};
-  a_packet[4] = {-90, 6, 6.0 / Wheel_Radius, 0};
-  a_packet[5] = {-90, 2, 2.0 / Wheel_Radius, 0};
-  a_packet[6] = {-90, 3, 3.0 / Wheel_Radius, 0};
-  a_packet[7] = {+180, 3, 3.0 / Wheel_Radius, 0};
-  a_packet[8] = {+90, 2, 2.0 / Wheel_Radius, 0};
-  a_packet[9] = {+90, 2, 2.0 / Wheel_Radius, 0};
-  a_packet[10] = {-90, 1, 1.0 / Wheel_Radius, 0};
-  a_packet[11] = {+90, 1, 1.0 / Wheel_Radius, 0};
-  a_packet[12] = {-90, 1, 1.0 / Wheel_Radius, 0};
-  a_packet[13] = {+90, 3, 3.0 / Wheel_Radius, 0};
-  a_packet[14] = {-90, 1, 1.0 / Wheel_Radius, 0};
-  a_packet[15] = {-90, 6, 6.0 / Wheel_Radius, 0};
-  a_packet[16] = {-90, 1, 1.0 / Wheel_Radius, 0};
-  a_packet[17] = {-90, 3, 3.0 / Wheel_Radius, 0};
-  a_packet[18] = {+90, 2, 2.0 / Wheel_Radius, 0};
-  a_packet[19] = {-90, 3, 3.0 / Wheel_Radius, 0};
-  a_packet[20] = {+90, 2, 2.0 / Wheel_Radius, 0};  //
-  a_packet[21] = {+200, +200, +200, +200};         //终值测试
-
   for (;;) {
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(100);

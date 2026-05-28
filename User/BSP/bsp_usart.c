@@ -92,7 +92,7 @@ void DT7_DR16_Handle()
   dt7_dr16.s2 = ((dt7_dr16.rx_dt7_dr16[5] >> 4) & 0x0003);
 }
 
-static uint8_t Buf_temp[10] = {0};
+static uint8_t Buf_temp[20] = {0};
 void CDC_Receive_Handle(uint8_t * Buf, uint32_t * Len)
 {
   for (uint32_t lenth = 0; lenth < *Len; lenth++) {
@@ -130,17 +130,12 @@ void Send_Vsp()
 R_Packet r_packet;
 void Receive_Vsp()
 {
-  if ((Buf_temp[0] == 0x11) && (Buf_temp[1] == 0xFF || Buf_temp[1] == 0xFE)) {//通信成功，解析数据
+  if ((Buf_temp[0] == 0x11) && (Buf_temp[1] == 0xFF || Buf_temp[1] == 0xFE)) {  //通信成功，解析数据
     memcpy(&r_packet.header, Buf_temp, 1);
     memcpy(&r_packet.state, Buf_temp + 1, 1);
     memcpy(&r_packet.v, Buf_temp + 2, sizeof(float));
-    memcpy(&r_packet.yaw, Buf_temp + 6, sizeof(float));
+    memcpy(&r_packet.yaw_tar, Buf_temp + 6, sizeof(float));
+    memcpy(&r_packet.yaw_ros, Buf_temp + 10, sizeof(float));
   }
-  else {//通信失败，清零数据
-    r_packet.header = 0x11;
-    r_packet.state = 0xFD;
-    r_packet.v = 0.0f;
-    r_packet.yaw = 0.0f;
-  }
-  memset(Buf_temp, 0, sizeof(Buf_temp));//清零接收缓冲区，准备下一次接收
+  memset(Buf_temp, 0, sizeof(Buf_temp));  //清零接收缓冲区，准备下一次接收
 }

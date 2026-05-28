@@ -91,8 +91,13 @@ typedef struct
 {
   uint8_t header;
   uint8_t state;
-  float v;    // 目标速度
-  float yaw;  // 目标yaw角度
+  float v;        // 目标速度
+  float yaw_tar;      // 目标yaw角度
+  float yaw_ros;  // yaw角度（ROS）
+
+  float yaw_ros_last;      // 上次yaw角度（ROS）
+  float yaw_ros_total;     // yaw累计角度（ROS）
+  uint32_t yaw_ros_count;  // yaw角度（ROS）计数
 } R_Packet;
 extern S_Packet s_packet;
 extern R_Packet r_packet;
