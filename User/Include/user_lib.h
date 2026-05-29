@@ -4,6 +4,10 @@
 #include "main.h"
 #include "cmsis_os.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum
 {
     CHASSIS_DEBUG = 1,
@@ -121,5 +125,9 @@ float OLS_Derivative(Ordinary_Least_Squares_t *OLS, float deltax, float y);
 float OLS_Smooth(Ordinary_Least_Squares_t *OLS, float deltax, float y);
 float Get_OLS_Derivative(Ordinary_Least_Squares_t *OLS);
 float Get_OLS_Smooth(Ordinary_Least_Squares_t *OLS);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

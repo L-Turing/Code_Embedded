@@ -7,13 +7,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -70,9 +69,15 @@ void Error_Handler(void);
 #define RSTN_IST8310_GPIO_Port GPIOG
 #define IMU_HEAT_Pin GPIO_PIN_6
 #define IMU_HEAT_GPIO_Port GPIOF
+#define LED_R_Pin GPIO_PIN_12
+#define LED_R_GPIO_Port GPIOH
 #define DRDY_IST8310_Pin GPIO_PIN_3
 #define DRDY_IST8310_GPIO_Port GPIOG
 #define DRDY_IST8310_EXTI_IRQn EXTI3_IRQn
+#define LED_G_Pin GPIO_PIN_11
+#define LED_G_GPIO_Port GPIOH
+#define LED_B_Pin GPIO_PIN_10
+#define LED_B_GPIO_Port GPIOH
 #define KEY_Pin GPIO_PIN_0
 #define KEY_GPIO_Port GPIOA
 #define CS1_ACCEL_Pin GPIO_PIN_4

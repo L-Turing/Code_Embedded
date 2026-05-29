@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -22,7 +22,6 @@
 #include "usbd_cdc_if.h"
 
 /* USER CODE BEGIN INCLUDE */
-#include "stdarg.h"
 #include "bsp_usart.h"
 /* USER CODE END INCLUDE */
 
@@ -95,16 +94,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-void usb_printf(const char *format, ...)
-{
-    va_list args;
-    uint32_t length;
 
-    va_start(args, format);
-    length = vsnprintf((char *)UserTxBufferFS, APP_TX_DATA_SIZE, (char *)format, args);
-    va_end(args);
-    CDC_Transmit_FS(UserTxBufferFS, length);
-}
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -273,7 +263,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-  CDC_Receive_Handle(Buf,Len);
+  CDC_Receive_Handle(Buf, Len);
   return (USBD_OK);
   /* USER CODE END 6 */
 }

@@ -6,13 +6,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under Ultimate Liberty license
-  * SLA0044, the "License"; You may not use this file except in compliance with
-  * the License. You may obtain a copy of the License at:
-  *                             www.st.com/SLA0044
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -26,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "main_task.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,8 +49,6 @@
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId INSTaskHandle;
-osThreadId GimbalTaskHandle;
-osThreadId RemoteTaskHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -59,9 +56,7 @@ osThreadId RemoteTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
-void StartIMU(void const * argument);
-void StartGimbal(void const * argument);
-void StartRemote(void const * argument);
+void StartINS(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -114,16 +109,8 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of INSTask */
-  osThreadDef(INSTask, StartIMU, osPriorityRealtime, 0, 1024);
+  osThreadDef(INSTask, StartINS, osPriorityRealtime, 0, 2048);
   INSTaskHandle = osThreadCreate(osThread(INSTask), NULL);
-
-  /* definition and creation of GimbalTask */
-  osThreadDef(GimbalTask, StartGimbal, osPriorityRealtime, 0, 1024);
-  GimbalTaskHandle = osThreadCreate(osThread(GimbalTask), NULL);
-
-  /* definition and creation of RemoteTask */
-  osThreadDef(RemoteTask, StartRemote, osPriorityRealtime, 0, 512);
-  RemoteTaskHandle = osThreadCreate(osThread(RemoteTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -151,61 +138,22 @@ void StartDefaultTask(void const * argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_StartIMU */
+/* USER CODE BEGIN Header_StartINS */
 /**
 * @brief Function implementing the INSTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartIMU */
-__weak void StartIMU(void const * argument)
+/* USER CODE END Header_StartINS */
+__weak void StartINS(void const * argument)
 {
-  /* USER CODE BEGIN StartIMU */
-  (void)argument;
+  /* USER CODE BEGIN StartINS */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1);
   }
-  /* USER CODE END StartIMU */
-}
-
-/* USER CODE BEGIN Header_StartGimbal */
-/**
-* @brief Function implementing the GimbalTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartGimbal */
-__weak void StartGimbal(void const * argument)
-{
-  /* USER CODE BEGIN StartGimbal */
-  (void)argument;
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartGimbal */
-}
-
-/* USER CODE BEGIN Header_StartRemote */
-/**
-* @brief Function implementing the RemoteTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartRemote */
-__weak void StartRemote(void const * argument)
-{
-  /* USER CODE BEGIN StartRemote */
-  (void)argument;
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartRemote */
+  /* USER CODE END StartINS */
 }
 
 /* Private application code --------------------------------------------------*/

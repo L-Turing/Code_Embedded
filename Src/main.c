@@ -1,28 +1,26 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
- *
- * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.</center></h2>
- *
- * This software component is licensed by ST under Ultimate Liberty license
- * SLA0044, the "License"; You may not use this file except in compliance with
- * the License. You may obtain a copy of the License at:
- *                             www.st.com/SLA0044
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2026 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
 #include "can.h"
 #include "dma.h"
-#include "iwdg.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -32,21 +30,21 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "BMI088driver.h"
-#include "PID.h"
 #include "bsp_can.h"
 #include "bsp_dwt.h"
 #include "bsp_usart.h"
-#include "ins_task.h"
-#include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+uint8_t * receive_usart_buffer[10] = {NULL};
+uint8_t * receive_can_buffer[5] = {NULL};
 
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -109,23 +107,24 @@ int main(void)
   MX_CAN2_Init();
   MX_USART6_UART_Init();
   MX_TIM4_Init();
-  
   /* USER CODE BEGIN 2 */
   DWT_Init(168);
   while (BMI088_init(&hspi1, 1) != BMI088_NO_ERROR);
-  MX_IWDG_Init();  //在DWT初始化之后！！！！！
-  Can1_Init();
-  Can2_Init();
-  PID_Init_Motor();
 
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart3, rx_buffer, 18);
+  receive_can_buffer[1] = pvPortMalloc(8);
+  receive_can_buffer[2] = pvPortMalloc(8);
+  receive_usart_buffer[0] = pvPortMalloc(10);
+  receive_usart_buffer[3] = pvPortMalloc(18);
+  receive_usart_buffer[6] = pvPortMalloc(21);
+  
+  Can_Filter_Init();
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart3, receive_usart_buffer[3], 18);
   __HAL_DMA_DISABLE_IT(huart3.hdmarx, DMA_IT_HT);
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart6, rc_buffer, 21);
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart6, receive_usart_buffer[6], 21);
   __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT);
 
   __HAL_TIM_CLEAR_IT(&htim4, TIM_IT_UPDATE);  //清除定时器中断标志位
   HAL_TIM_Base_Start_IT(&htim4);
-  
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
@@ -163,9 +162,8 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 6;
@@ -214,16 +212,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-  if (htim->Instance == TIM4) {  //每0.5ms进一次中断
+  if (htim->Instance == TIM4) {  //每1ms进一次中断
     TIM4_cnt++;
-    if (TIM4_cnt >= 12) {//1000/(0.5*12)=166.67Hz,
+    if (TIM4_cnt > 999) {  //1000/(1*1000)=1Hz
       TIM4_cnt = 0;
-      // Send_Vision(1, 1, 0, 0, 0, INS.Pitch / 57.32, INS.Roll / 57.32, INS.Yaw / 57.32, 0, 0, 0);
-      //  Send_Vision(
-      //   detect_color,task_mode, reset_tracker, is_play,
-      //   reserved,INS.Roll, INS.Pitch, INS.yaw, game_time,timestamp,
-      //   bullet_speed);
-
+      Send_Vsp();
     }
   }
   /* USER CODE END Callback 1 */
@@ -237,11 +230,12 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-
+  __disable_irq();
+  while (1) {
+  }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
@@ -253,7 +247,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-       tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

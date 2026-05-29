@@ -24,6 +24,10 @@
 #include "arm_math.h"
 #include <math.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef abs
 #define abs(x) ((x > 0) ? x : -x)
 #endif
@@ -272,5 +276,9 @@ typedef struct
 
 void TD_Init(TD_t *td, float r, float h0);
 float TD_Calculate(TD_t *td, float input);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
