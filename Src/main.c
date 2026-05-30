@@ -114,7 +114,7 @@ int main(void)
   receive_can_buffer[1] = pvPortMalloc(8);
   receive_can_buffer[2] = pvPortMalloc(8);
   receive_usart_buffer[0] = pvPortMalloc(10);
-  receive_usart_buffer[3] = pvPortMalloc(18);
+  receive_usart_buffer[3] = pvPortMalloc(18); 
   receive_usart_buffer[6] = pvPortMalloc(21);
   
   Can_Filter_Init();
@@ -214,7 +214,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 1 */
   if (htim->Instance == TIM4) {  //每1ms进一次中断
     TIM4_cnt++;
-    if (TIM4_cnt > 999) {  //1000/(1*1000)=1Hz
+    if (TIM4_cnt > 9) {  //1000/(1*10)=100Hz
       TIM4_cnt = 0;
       Send_Vsp();
     }
