@@ -36,6 +36,7 @@ double msp(double x, double in_min, double in_max, double out_min, double out_ma
 #ifdef __cplusplus
 extern DJIMotor_Class motor_leftwheel;
 extern DJIMotor_Class motor_rightwheel;
+extern DJIMotor_Class motor_t;
 extern Servo servo_yaw;
 extern Servo servo_pitch1;
 extern Servo servo_pitch2;

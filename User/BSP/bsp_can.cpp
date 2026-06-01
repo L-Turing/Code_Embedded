@@ -46,6 +46,10 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef * hcan)  //CAN2
       imu.imu_online = 0;
       IMU_UpdateData(rxDATA2);
     }
+    if (motor_t.motor_feedback_id == can_rxheader2.StdId) {
+      memcpy(data_can_receive[2], rxDATA2, 8);
+      motor_t.flag_connect = 1;
+    }
   }
 }
 

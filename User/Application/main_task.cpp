@@ -30,6 +30,8 @@ DJIMotor_Class motor_leftwheel(
   which_cans::can1, motor_types::M2006, 0x200, 0X201, type_signal::LED_1_ON);
 DJIMotor_Class motor_rightwheel(
   which_cans::can1, motor_types::M2006, 0x200, 0X202, type_signal::LED_2_ON);
+DJIMotor_Class motor_t(which_cans::can2, motor_types::M2006, 0x200, 0X202, type_signal::LED_3_ON);
+
 Servo servo_yaw(&htim5, TIM_CHANNEL_4, -180, 180, 250, 1250);     //PI0
 Servo servo_pitch1(&htim5, TIM_CHANNEL_3, -180, 180, 800, 1250);  //PH12
 Servo servo_pitch2(&htim5, TIM_CHANNEL_2, -180, 180, 250, 1250);  //PH11
@@ -121,6 +123,7 @@ void StartChassis(void * argument)
     //更新电机状态
     motor_leftwheel.Update_Status(data_can_receive[0]);
     motor_rightwheel.Update_Status(data_can_receive[1]);
+    motor_t.Update_Status(data_can_receive[2]);
 
     if (flag.ps2_start == 0) {  //遥控器开始键未按下，底盘不动
       motor_leftwheel.output = 0.0f;
@@ -175,6 +178,11 @@ void StartChassis(void * argument)
       1, DJI, 0x200, (int16_t)(motor_leftwheel.output), (int16_t)(motor_rightwheel.output), 0, 0);
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(2);
+
+    motor_t.SetWheel(-100.0f);  //测试用，电机t保持200rpm
+    CanSend(
+      2, DJI, 0x200, (int16_t)(motor_t.output), (int16_t)(motor_t.output),
+      (int16_t)(motor_t.output), (int16_t)(motor_t.output));
   }
 }
 
