@@ -22,8 +22,7 @@
 #include "usart.h"
 #include "usbd_cdc_if.h"
 
-Analog_Packet a_packet[22];  //模拟量数据包
-uint8_t i_a = 0;             //模拟量数据包计数
+extern "C" uint32_t running_time;
 
 //变量-----------------------------------------------------------------------------
 DJIMotor_Class motor_leftwheel(
@@ -38,10 +37,12 @@ Servo servo_pitch2(&htim5, TIM_CHANNEL_2, -180, 180, 250, 1250);  //PH11
 Servo servo_pitch3(&htim5, TIM_CHANNEL_1, -180, 180, 250, 1250);  //PH10
 Servo servo_test(&htim4, TIM_CHANNEL_4, -180, 180, 250, 1250);    //PD15
 
-static float wheel_speed[2] = {0.0f, 0.0f};             //电机输出轴转速 rpm
-static float vx_temp = 0.0f, z_temp[2] = {0.0f, 0.0f};  //临时速度变量 临时位置变量
+static float wheel_speed[2] = {0.0f, 0.0f};  //电机输出轴转速 rpm
+static float vx_temp = 0.0f, z_temp = 0.0f;  //临时速度变量 临时位置变量
+static constexpr float nav_yaw_error_limit_deg = 15.0f;
+static float nav_wz_temp = 0.0f;
 //底盘运动学解算
-PID wz_pid = {0.4f, 0.002f, 0.0f, 0, 0, 0, 0.16f, 3.0f, 0, 0, 0, 0, 0, 0};
+PID wz_pid = {0.2f, 0.0f, 2.0f, 0, 0, 0, 0.2f, 3.0f, 0, 0, 0, 0, 0, 0};
 
 //非任务函数-----------------------------------------------------------------------------
 
@@ -70,7 +71,7 @@ static void OnlineJudge()
   PS2.ps2_online++;  //PS2离线计数
   if (PS2.ps2_online >= 500) {
     PS2.ps2_online = 500;
-    //SignalMark(type_signal::Buzzer_ON);
+    NVIC_SystemReset();  //PS2离线则复位
   }
   else {
     //SignalMark(type_signal::Buzzer_OFF);
@@ -84,20 +85,51 @@ static void OnlineJudge()
   }
 }
 
-static void Chassis_Solution(float vx, float vy, const float (&wz_)[2])  //m/s m/s 度
+static void Reset_Chassis_Yaw_Control()
+{
+  z_temp = imu.yaw_total;
+  nav_wz_temp = 0.0f;
+
+  wz_pid.pout = 0.0f;
+  wz_pid.iout = 0.0f;
+  wz_pid.dout = 0.0f;
+  wz_pid.Error = 0.0f;
+  wz_pid.LastError = 0.0f;
+  wz_pid.PrevError = 0.0f;
+  wz_pid.output = 0.0f;
+}
+
+static void Chassis_Solution(float vx, float vy, float wz_)  //m/s m/s 度
 {
   static float wz = 0.0f;
   if (fabs(vx) > 3.0f || fabs(vy) > 3.0f) {  //异常值清零
     vx = vy = 0.0f;
   }
-  if (flag.ps2_mode == 0) wz = PID_Calc(&wz_pid, imu.yaw_total, wz_[0]);
-  if (flag.ps2_mode == 1) wz = PID_Calc(&wz_pid, imu.yaw, wz_[1]);
+  wz = PID_Calc(&wz_pid, imu.yaw_total, wz_);
 
   if (imu.imu_online >= 500) wz = 0.0f;  //IMU离线时辅助速度清零
 
-  // wz = 0.0f;  //暂时不使用陀螺仪反馈，直接用遥控器输入的角速度
   wheel_speed[0] = (-vx - wz * Wheel_Base / 2.0f) / (Wheel_Radius * 2.0f * 3.1416f) * 60.0f;
   wheel_speed[1] = (+vx - wz * Wheel_Base / 2.0f) / (Wheel_Radius * 2.0f * 3.1416f) * 60.0f;
+
+  for (uint8_t i = 0; i < 2; i++) {  //速度限幅
+    if (wheel_speed[i] > Motor_Speed_Rpm_Out_Limit) {
+      wheel_speed[i] = Motor_Speed_Rpm_Out_Limit;
+    }
+    else if (wheel_speed[i] < -Motor_Speed_Rpm_Out_Limit) {
+      wheel_speed[i] = -Motor_Speed_Rpm_Out_Limit;
+    }
+  }
+}
+
+static void Chassis_Solution_Wz(float vx, float vy, float wz)  //m/s m/s rad/s
+{
+  if (fabs(vx) > 3.0f || fabs(vy) > 3.0f) {  //异常值清零
+    vx = vy = 0.0f;
+  }
+
+  wheel_speed[0] = (-vx - 3.0f * wz * Wheel_Base / 2.0f) / (Wheel_Radius * 2.0f * 3.1416f) * 60.0f;
+  wheel_speed[1] = (+vx - 3.0f * wz * Wheel_Base / 2.0f) / (Wheel_Radius * 2.0f * 3.1416f) * 60.0f;
 
   for (uint8_t i = 0; i < 2; i++) {  //速度限幅
     if (wheel_speed[i] > Motor_Speed_Rpm_Out_Limit) {
@@ -119,70 +151,81 @@ double msp(double x, double in_min, double in_max, double out_min, double out_ma
 void StartChassis(void * argument)
 {
   (void)argument;
+  flag.ps2_start = 0;
+  flag.ps2_mode = 0;
+  uint8_t chassis_mode_last = flag.ps2_mode;
   for (;;) {
     //更新电机状态
     motor_leftwheel.Update_Status(data_can_receive[0]);
     motor_rightwheel.Update_Status(data_can_receive[1]);
     motor_t.Update_Status(data_can_receive[2]);
 
-    if (flag.ps2_start == 0) {  //遥控器开始键未按下，底盘不动
-      motor_leftwheel.output = 0.0f;
-      motor_rightwheel.output = 0.0f;
-
-      SignalMark(type_signal::LED_R_OFF);
+    if (flag.ps2_mode != chassis_mode_last) {
+      Reset_Chassis_Yaw_Control();
+      chassis_mode_last = flag.ps2_mode;
     }
-    else {  //遥控器开始键按下，底盘根据右侧按键控制运动
+
+    if (flag.ps2_start == 0) {  //未启动时，清零平移速度并保持当前航向
+      vx_temp = 0.0f;
+      Reset_Chassis_Yaw_Control();
+      SignalMark(type_signal::LED_R_ON);
+      SignalMark(type_signal::LED_G_OFF);
+    }
+    else {  //启动后按模式控制
+      SignalMark(type_signal::LED_G_ON);
+      SignalMark(type_signal::LED_R_OFF);
       switch (flag.ps2_mode) {
         case 0:  //手动
           if (PS2.right_x[0] && !PS2.right_x[1])
-            vx_temp = 0.5f;
+            vx_temp = 0.3f;
           else if (!PS2.right_x[0] && PS2.right_x[1])
-            vx_temp = -0.5f;
+            vx_temp = -0.3f;
           else
             vx_temp = 0.0f;
 
+          nav_wz_temp = 0.0f;
           if (PS2.right_y[0] && !PS2.right_y[1])
-            z_temp[0] += 0.1f;
+            z_temp += 0.1f;
           else if (!PS2.right_y[0] && PS2.right_y[1])
-            z_temp[0] -= 0.1f;
+            z_temp -= 0.1f;
 
-          SignalMark(type_signal::LED_R_ON);
           break;
 
         case 1:  //导航
-          if (r_packet.v > 0.1f)
-            vx_temp = 0.5f;
-          else if (r_packet.v < -0.1f)
-            vx_temp = -0.5f;
-          else
+          if (fabsf(r_packet.v) > 0.02f) {
+            vx_temp = r_packet.v;
+          }
+          else {
             vx_temp = 0.0f;
+          }
 
-          // if (fabs(r_packet.yaw_tar) < 0.1f)
-          //   z_temp[1] = 0.0f;
-          // else
-          z_temp[1] = r_packet.yaw_tar;
+          if (fabsf(r_packet.yaw_tar_rad_s) > 0.02f) {
+            nav_wz_temp = r_packet.yaw_tar_rad_s;
+          }
+          else {
+            nav_wz_temp = 0.0f;
+          }
 
-          SignalMark(type_signal::LED_R_Breathe_ON);
           break;
 
         default:
+          vx_temp = 0.0f;
+          Reset_Chassis_Yaw_Control();
           break;
       }
-
-      Chassis_Solution(vx_temp, 0, z_temp);
-      motor_leftwheel.SetWheel(wheel_speed[0]);
-      motor_rightwheel.SetWheel(wheel_speed[1]);
     }
+
+    if (flag.ps2_start != 0 && flag.ps2_mode == 1)
+      Chassis_Solution_Wz(vx_temp, 0, nav_wz_temp);
+    else
+      Chassis_Solution(vx_temp, 0, z_temp);
+    motor_leftwheel.SetWheel(wheel_speed[0]);
+    motor_rightwheel.SetWheel(wheel_speed[1]);
 
     CanSend(
       1, DJI, 0x200, (int16_t)(motor_leftwheel.output), (int16_t)(motor_rightwheel.output), 0, 0);
     HAL_IWDG_Refresh(&hiwdg);
     osDelay(2);
-
-    motor_t.SetWheel(-100.0f);  //测试用，电机t保持200rpm
-    CanSend(
-      2, DJI, 0x200, (int16_t)(motor_t.output), (int16_t)(motor_t.output),
-      (int16_t)(motor_t.output), (int16_t)(motor_t.output));
   }
 }
 
@@ -206,13 +249,20 @@ void StartRemote(void * argument)
     imu.yaw_total = imu.yaw + imu.yaw_cirnum * 360.0f;
     imu.yaw_last = imu.yaw;
 
-    // if (r_packet.yaw_ros - r_packet.yaw_ros_last > 180.0f) r_packet.yaw_ros_count--;
-    // if (r_packet.yaw_ros - r_packet.yaw_ros_last < -180.0f) r_packet.yaw_ros_count++;
-    // r_packet.yaw_ros_total = r_packet.yaw_ros + r_packet.yaw_ros_count * 360.0f;
-    // r_packet.yaw_ros_last = r_packet.yaw_ros;
+    if (flag.ps2_start != 0) {
+      if ((running_time % 200U) < 100U)
+        motor_t.SetWheel(-50.0f);
+      else
+        motor_t.SetWheel(0.0f);
+    }
+    else
+      motor_t.SetWheel(0.0f);
 
+    CanSend(
+      2, DJI, 0x200, (int16_t)(motor_t.output), (int16_t)(motor_t.output),
+      (int16_t)(motor_t.output), (int16_t)(motor_t.output));
     HAL_IWDG_Refresh(&hiwdg);
-    osDelay(2);
+    osDelay(1);
   }
 }
 

@@ -5,8 +5,9 @@
 #include "main_task.h"
 #include "math.h"
 
-static PID pid_leftwheel_speed = {12.0f, 0.0f, 0.0f, 0, 0, 0, 0, 9000, 0, 0, 0, 0, 0, 0};
-static PID pid_rightwheel_speed = {12.0f, 0.0f, 0.0f, 0, 0, 0, 0, 9000, 0, 0, 0, 0, 0, 0};
+static PID pid_leftwheel_speed = {12.0f, 0.1f, 0.0f, 0, 0, 0, 1000, 9000, 0, 0, 0, 0, 0, 0};
+static PID pid_rightwheel_speed = {12.0f, 0.1f, 0.0f, 0, 0, 0, 1000, 9000, 0, 0, 0, 0, 0, 0};
+static PID pid_t_speed={12.0f, 0.1f, 0.0f, 0, 0, 0, 1000, 9000, 0, 0, 0, 0, 0, 0};
 
 void PID_Init_Motor()
 {
@@ -14,6 +15,7 @@ void PID_Init_Motor()
   motor_leftwheel.pid_position = nullptr;
   motor_rightwheel.pid_speed = &pid_rightwheel_speed;
   motor_rightwheel.pid_position = nullptr;
+  motor_t.pid_speed = &pid_t_speed;
 }
 
 static void PID_Error(PID * pid, float feb, float tar);

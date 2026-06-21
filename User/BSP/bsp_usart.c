@@ -1,5 +1,6 @@
 #include "bsp_usart.h"
 
+#include "bsp_crc.h"
 #include "Peripheral.h"
 #include "imu.h"
 #include "main.h"
@@ -92,10 +93,14 @@ void DT7_DR16_Handle()
   dt7_dr16.s2 = ((dt7_dr16.rx_dt7_dr16[5] >> 4) & 0x0003);
 }
 
-static uint8_t Buf_temp[20] = {0};
+static uint8_t Buf_temp[11] = {0};
+static uint32_t Buf_temp_len = 0;
 void CDC_Receive_Handle(uint8_t * Buf, uint32_t * Len)
 {
-  for (uint32_t lenth = 0; lenth < *Len; lenth++) {
+  Buf_temp_len = (*Len < sizeof(Buf_temp)) ? *Len : sizeof(Buf_temp);
+  memset(Buf_temp, 0, sizeof(Buf_temp));
+
+  for (uint32_t lenth = 0; lenth < Buf_temp_len; lenth++) {
     Buf_temp[lenth] = Buf[lenth];
   }
 }
@@ -130,12 +135,22 @@ void Send_Vsp()
 R_Packet r_packet;
 void Receive_Vsp()
 {
-  if ((Buf_temp[0] == 0x11) && (Buf_temp[1] == 0xFF || Buf_temp[1] == 0xFE)) {  //通信成功，解析数据
-    memcpy(&r_packet.header, Buf_temp, 1);
-    memcpy(&r_packet.state, Buf_temp + 1, 1);
-    memcpy(&r_packet.v, Buf_temp + 2, sizeof(float));
-    memcpy(&r_packet.yaw_tar, Buf_temp + 6, sizeof(float));
-    memcpy(&r_packet.yaw_ros, Buf_temp + 10, sizeof(float));
+  if (Buf_temp_len >= sizeof(r_packet.datarx_all_u8) && Buf_temp[0] == 0x5A &&
+      Verify_CRC16_Check_Sum(Buf_temp, sizeof(r_packet.datarx_all_u8))) {
+    memcpy(r_packet.datarx_all_u8, Buf_temp, sizeof(r_packet.datarx_all_u8));
+    memcpy(&r_packet.header, r_packet.datarx_all_u8, 1);
+    memcpy(&r_packet.v, r_packet.datarx_all_u8 + 1, sizeof(float));
+    memcpy(&r_packet.yaw_tar_rad_s, r_packet.datarx_all_u8 + 5, sizeof(float));
+    memcpy(&r_packet.crc16, r_packet.datarx_all_u8 + 9, sizeof(uint16_t));
   }
+  else {
+    memset(r_packet.datarx_all_u8, 0, sizeof(r_packet.datarx_all_u8));
+    r_packet.header = 0;
+    r_packet.v = 0.0f;
+    r_packet.yaw_tar_rad_s = 0.0f;
+    r_packet.crc16 = 0;
+  }
+
   memset(Buf_temp, 0, sizeof(Buf_temp));  //清零接收缓冲区，准备下一次接收
+  Buf_temp_len = 0;
 }

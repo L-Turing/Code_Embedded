@@ -40,7 +40,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint32_t running_time_10ms = 0;
+uint32_t running_time = 0;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -222,10 +222,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   static uint16_t TIM2_Cnt = 0;
   if (htim->Instance == TIM2) {  //1ms一次中断
     TIM2_Cnt++;
-    if (TIM2_Cnt >= 9) {  //10ms
+    if (TIM2_Cnt >= 50) {  //50ms
       TIM2_Cnt = 0;
-      running_time_10ms++;
-      Send_Vsp();     //发送数据到上位机
+      running_time++;
+      //Send_Vsp();     //发送数据到上位机
       Receive_Vsp();  //接收来自上位机的数据
     }
   }
