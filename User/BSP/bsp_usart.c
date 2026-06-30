@@ -2,7 +2,7 @@
 
 #include "bsp_crc.h"
 #include "Peripheral.h"
-#include "IMU.h"
+#include "imu.h"
 #include "main.h"
 #include "main_task.h"
 #include "stdlib.h"
@@ -26,7 +26,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef * huart, uint16_t Size)
     USART_Callback[6]();
   }
 }
- 
+
 void PS2_Handle()
 {
   HAL_UARTEx_ReceiveToIdle_DMA(&huart6, PS2.rx_ps2_uint, sizeof(PS2.rx_ps2_uint));

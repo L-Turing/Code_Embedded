@@ -2,7 +2,7 @@
 #define __STEERINGGEAR_H
 
 #include "Peripheral.h"
-#include "tim.h"
+#include "TIM.h"
 #include "stdint.h"
 
 #pragma pack(push, 1)

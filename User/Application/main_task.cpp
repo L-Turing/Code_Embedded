@@ -6,6 +6,7 @@
 #include "Peripheral.h"
 #include "SDcard.h"
 #include "SteeringGear.h"
+#include "TIM.h"
 #include "arm_math.h"
 #include "bsp_can.h"
 #include "bsp_dwt.h"
@@ -18,7 +19,6 @@
 #include "sdio.h"
 #include "stdlib.h"
 #include "string.h"
-#include "tim.h"
 #include "usart.h"
 #include "usbd_cdc_if.h"
 
