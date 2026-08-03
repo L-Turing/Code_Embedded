@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "Motor.h"
-#include "can.h"
 
 static float uint_to_float(int x_int, float x_min, float x_max, int bits)
 {
@@ -21,14 +20,8 @@ static int float_to_uint(float x_float, float x_min, float x_max, int bits)
 
 void DaMiaoMotor_Class::Enable_Damiao_Motor()
 {
-  CAN_TxHeaderTypeDef tx_message;
+  // TODO: CAN 已移除，需要替换通讯方式
   uint8_t txDATA[8];
-  uint32_t send_mail_box;
-
-  tx_message.StdId = this->motor_send_id;
-  tx_message.IDE = CAN_ID_STD;
-  tx_message.RTR = CAN_RTR_DATA;
-  tx_message.DLC = 8;
 
   txDATA[0] = 0xFF;
   txDATA[1] = 0xFF;
@@ -38,25 +31,12 @@ void DaMiaoMotor_Class::Enable_Damiao_Motor()
   txDATA[5] = 0xFF;
   txDATA[6] = 0xFF;
   txDATA[7] = 0xFC;
-
-  if (this->which_can == which_cans::can1) {
-    HAL_CAN_AddTxMessage(&hcan1, &tx_message, txDATA, &send_mail_box);
-  }
-  else if (this->which_can == which_cans::can2) {
-    HAL_CAN_AddTxMessage(&hcan2, &tx_message, txDATA, &send_mail_box);
-  }
 }
 
 void DaMiaoMotor_Class::Disable_Damiao_Motor()
 {
-  CAN_TxHeaderTypeDef tx_message;
+  // TODO: CAN 已移除，需要替换通讯方式
   uint8_t txDATA[8];
-  uint32_t send_mail_box;
-
-  tx_message.StdId = this->motor_send_id;
-  tx_message.IDE = CAN_ID_STD;
-  tx_message.RTR = CAN_RTR_DATA;
-  tx_message.DLC = 8;
 
   txDATA[0] = 0xFF;
   txDATA[1] = 0xFF;
@@ -66,13 +46,6 @@ void DaMiaoMotor_Class::Disable_Damiao_Motor()
   txDATA[5] = 0xFF;
   txDATA[6] = 0xFF;
   txDATA[7] = 0xFD;
-
-  if (this->which_can == which_cans::can1) {
-    HAL_CAN_AddTxMessage(&hcan1, &tx_message, txDATA, &send_mail_box);
-  }
-  else if (this->which_can == which_cans::can2) {
-    HAL_CAN_AddTxMessage(&hcan2, &tx_message, txDATA, &send_mail_box);
-  }
 }
 
 void DaMiaoMotor_Class::Drive_Damiao_Motor_MIT(
@@ -86,14 +59,8 @@ void DaMiaoMotor_Class::Drive_Damiao_Motor_MIT(
   kd_tmp = float_to_uint(_KD, KD_MIN, KD_MAX, 12);
   tor_tmp = float_to_uint(_torq, T_MIN, T_MAX, 12);
 
-  CAN_TxHeaderTypeDef tx_message;
+  // TODO: CAN 已移除，需要替换通讯方式
   uint8_t txDATA[8];
-  uint32_t send_mail_box;
-
-  tx_message.StdId = this->motor_send_id;
-  tx_message.IDE = CAN_ID_STD;
-  tx_message.RTR = CAN_RTR_DATA;
-  tx_message.DLC = 8;
 
   txDATA[0] = (pos_tmp >> 8);
   txDATA[1] = pos_tmp;
@@ -103,13 +70,6 @@ void DaMiaoMotor_Class::Drive_Damiao_Motor_MIT(
   txDATA[5] = (kd_tmp >> 4);
   txDATA[6] = ((kd_tmp & 0xF) << 4) | (tor_tmp >> 8);
   txDATA[7] = tor_tmp;
-
-  if (this->which_can == which_cans::can1) {
-    HAL_CAN_AddTxMessage(&hcan1, &tx_message, txDATA, &send_mail_box);
-  }
-  else if (this->which_can == which_cans::can2) {
-    HAL_CAN_AddTxMessage(&hcan2, &tx_message, txDATA, &send_mail_box);
-  }
 }
 
 void DaMiaoMotor_Class::Update_Status(uint8_t * canbuf_receive)

@@ -45,7 +45,6 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     User/Application/main_task.cpp
-    User/BSP/bsp_can.cpp
     User/BSP/bsp_crc.c
     User/BSP/bsp_dwt.c
     User/BSP/bsp_PWM.c
@@ -59,6 +58,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     User/Module/Peripheral/IMU.c
     User/Module/Peripheral/Peripheral.cpp
     User/Module/Peripheral/SDcard.c
+    User/BSP/buzzer.c
     
     # Add user sources here
 )

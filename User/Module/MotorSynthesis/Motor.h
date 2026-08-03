@@ -31,19 +31,12 @@ enum class motor_control_modes
   Position_Mode = 1,
 };
 
-enum class which_cans
-{
-  can1 = 1,
-  can2 = 2,
-};
-
 class Motor_Class
 {
 private:
 public:
   bool flag_state;                           //电机在线标志
   int16_t flag_connect{};                    //电机连接计数
-  which_cans which_can{};                    // 电机所用CAN
   motor_types motor_type{};                  // 电机类型
   motor_control_modes motor_control_mode{};  // 电机控制模式
   int8_t temperature{};
@@ -75,9 +68,8 @@ public:
   PID * pid_position{};     // 位置PID指针
 
   explicit Motor_Class(
-    which_cans canx, motor_types m, uint32_t send_id, uint32_t feedback_id, type_signal sign)
-  : which_can(canx),
-    motor_type(m),
+    motor_types m, uint32_t send_id, uint32_t feedback_id, type_signal sign)
+  : motor_type(m),
     motor_send_id(send_id),
     motor_feedback_id(feedback_id),
     sign_mark(sign)
@@ -94,8 +86,8 @@ class DJIMotor_Class : public Motor_Class
 private:
 public:
   explicit DJIMotor_Class(
-    which_cans canx, motor_types m, uint32_t send_id, uint32_t feedback_id, type_signal sign)
-  : Motor_Class(canx, m, send_id, feedback_id, sign)
+    motor_types m, uint32_t send_id, uint32_t feedback_id, type_signal sign)
+  : Motor_Class(m, send_id, feedback_id, sign)
   {
   }  // 电机类型 电机can 电机ID
   void Update_Status(uint8_t * canbuf_receive);
@@ -130,8 +122,8 @@ public:
   float accumulate_angle{};
 
   explicit DaMiaoMotor_Class(
-    which_cans canx, motor_types m, uint32_t send_id, uint32_t feedback_id, type_signal sign)
-  : Motor_Class(canx, m, send_id, feedback_id, sign)
+    motor_types m, uint32_t send_id, uint32_t feedback_id, type_signal sign)
+  : Motor_Class(m, send_id, feedback_id, sign)
   {
   }  // 电机类型 电机can 电机ID
 

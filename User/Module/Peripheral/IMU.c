@@ -2,8 +2,6 @@
 
 #include <string.h>
 
-#include "can.h"
-
 imu_t imu;
 
 int float_to_uint(float x_float, float x_min, float x_max, int bits)
@@ -22,13 +20,13 @@ float uint_to_float(int x_int, float x_min, float x_max, int bits)
   return ((float)x_int) * span / ((float)((1 << bits) - 1)) + offset;
 }
 
-void imu_init(uint8_t can_id, uint8_t mst_id, CAN_HandleTypeDef * hcan)
+void imu_init(uint8_t mst_id)
 {
-  imu.can_id = can_id;
   imu.mst_id = mst_id;
-  imu.can_handle = hcan;
 }
 
+// TODO: 以下函数依赖 CAN 通讯，CAN 已移除，需要替换通讯方式
+#if 0
 static void imu_send_cmd(uint8_t reg_id, uint8_t ac, uint32_t data)
 {
   if (imu.can_handle == NULL) return;
@@ -82,6 +80,7 @@ void imu_request_gyro() { imu_read_reg(GYRO_DATA); }
 void imu_request_euler() { imu_read_reg(EULER_DATA); }
 
 void imu_request_quat() { imu_read_reg(QUAT_DATA); }
+#endif
 
 void IMU_UpdateAccel(uint8_t * pData)
 {

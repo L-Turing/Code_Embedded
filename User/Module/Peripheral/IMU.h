@@ -29,23 +29,9 @@ typedef enum
 {
   COM_USB = 0,
   COM_RS485,
-  COM_CAN,
   COM_VOFA
 
 } imu_com_port_e;
-
-typedef enum
-{
-  CAN_BAUD_1M = 0,
-  CAN_BAUD_500K,
-  CAN_BAUD_400K,
-  CAN_BAUD_250K,
-  CAN_BAUD_200K,
-  CAN_BAUD_100K,
-  CAN_BAUD_50K,
-  CAN_BAUD_25K
-
-} imu_baudrate_e;
 
 typedef enum
 {
@@ -62,7 +48,6 @@ typedef enum
   SET_DELAY,
   CHANGE_ACTIVE,
   SET_BAUD,
-  SET_CAN_ID,
   SET_MST_ID,
   DATA_OUTPUT_SELECTION,
   SAVE_PARAM = 254,
@@ -71,10 +56,7 @@ typedef enum
 
 typedef struct
 {
-  uint8_t can_id;
   uint8_t mst_id;
-
-  CAN_HandleTypeDef * can_handle;
 
   float pitch;
   float roll;
@@ -95,25 +77,25 @@ typedef struct
 
 extern imu_t imu;
 
-void imu_init(uint8_t can_id, uint8_t mst_id, CAN_HandleTypeDef * hcan);
-void imu_write_reg(uint8_t reg_id, uint32_t data);
-void imu_read_reg(uint8_t reg_id);
-void imu_reboot();
-void imu_accel_calibration();
-void imu_gyro_calibration();
-void imu_change_com_port(imu_com_port_e port);
-void imu_set_active_mode_delay(uint32_t delay);
-void imu_change_to_active();
-void imu_change_to_request();
-void imu_set_baud(imu_baudrate_e baud);
-void imu_set_can_id(uint8_t can_id);
-void imu_set_mst_id(uint8_t mst_id);
-void imu_save_parameters();
-void imu_restore_settings();
-void imu_request_accel();
-void imu_request_gyro();
-void imu_request_euler();
-void imu_request_quat();
+void imu_init(uint8_t mst_id);
+// TODO: 以下函数依赖 CAN 通讯，CAN 已移除，需要替换通讯方式
+// void imu_write_reg(uint8_t reg_id, uint32_t data);
+// void imu_read_reg(uint8_t reg_id);
+// void imu_reboot();
+// void imu_accel_calibration();
+// void imu_gyro_calibration();
+// void imu_change_com_port(imu_com_port_e port);
+// void imu_set_active_mode_delay(uint32_t delay);
+// void imu_change_to_active();
+// void imu_change_to_request();
+// void imu_set_baud(imu_baudrate_e baud);
+// void imu_set_mst_id(uint8_t mst_id);
+// void imu_save_parameters();
+// void imu_restore_settings();
+// void imu_request_accel();
+// void imu_request_gyro();
+// void imu_request_euler();
+// void imu_request_quat();
 void IMU_UpdateData(uint8_t * pData);
 
 #ifdef __cplusplus

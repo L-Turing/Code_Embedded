@@ -18,24 +18,23 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
-#include "can.h"
+
 #include "dma.h"
 #include "fatfs.h"
+#include "gpio.h"
 #include "iwdg.h"
 #include "sdio.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_device.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "PID.h"
 #include "Peripheral.h"
-#include "bsp_can.h"
 #include "bsp_dwt.h"
 #include "bsp_usart.h"
+#include "buzzer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,7 +60,6 @@ uint32_t running_time = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -77,7 +75,6 @@ void MX_FREERTOS_Init(void);
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -95,7 +92,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-  DWT_Init(72);
+  // DWT_Init(168);
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -103,11 +100,10 @@ int main(void)
   MX_DMA_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_USB_DEVICE_Init();
   MX_TIM12_Init();
-  MX_CAN1_Init();
-  MX_CAN2_Init();
   MX_USART1_UART_Init();
-  MX_IWDG_Init();
+  // MX_IWDG_Init();
   MX_USART6_UART_Init();
   MX_TIM5_Init();
   MX_TIM4_Init();
@@ -115,44 +111,34 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
-  Can1_Init();
-  Can2_Init();
-  PID_Init_Motor();
+  // PID_Init_Motor();
 
-  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);  //PI0
-  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);  //PH12
-  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);  //PH11
-  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);  //PH10
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);  //PD15
+  // HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);  //PI0
+  // HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_3);  //PH12
+  // HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_2);  //PH11
+  // HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_1);  //PH10
+  // HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);  //PD15
 
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);   //呼吸灯
-  HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);  //蜂鸣器
-  __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);  //计时
-  HAL_TIM_Base_Start_IT(&htim2);
+  // HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);   //呼吸灯
+  //HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);  //蜂鸣器
+  // __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);  //计时
+  // HAL_TIM_Base_Start_IT(&htim2);
 
-  USART_Callback[1] = DT7_DR16_Handle;
-  USART_Callback[6] = PS2_Handle;
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, dt7_dr16.rx_dt7_dr16, sizeof(dt7_dr16.rx_dt7_dr16));
-  __HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart6, PS2.rx_ps2_uint, sizeof(PS2.rx_ps2_uint));
-  __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT);
+  // USART_Callback[1] = DT7_DR16_Handle;
+  // USART_Callback[6] = PS2_Handle;
+  // HAL_UARTEx_ReceiveToIdle_DMA(&huart1, dt7_dr16.rx_dt7_dr16, sizeof(dt7_dr16.rx_dt7_dr16));
+  // __HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
+  // HAL_UARTEx_ReceiveToIdle_DMA(&huart6, PS2.rx_ps2_uint, sizeof(PS2.rx_ps2_uint));
+  // __HAL_DMA_DISABLE_IT(huart6.hdmarx, DMA_IT_HT);
 
   /* USER CODE END 2 */
-
-  /* Init scheduler */
-  osKernelInitialize();  /* Call init function for freertos objects (in cmsis_os2.c) */
-  MX_FREERTOS_Init();
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
     /* USER CODE END WHILE */
-
+    gala_you();
+    HAL_Delay(10000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -170,36 +156,34 @@ void SystemClock_Config(void)
   /** Configure the main internal regulator output voltage
   */
   __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 6;
-  RCC_OscInitStruct.PLL.PLLN = 72;
+  RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 3;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
+  RCC_OscInitStruct.PLL.PLLQ = 7;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
     Error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.ClockType =
+    RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
     Error_Handler();
   }
 }
@@ -216,22 +200,21 @@ void SystemClock_Config(void)
   * @param  htim : TIM handle
   * @retval None
   */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef * htim)
 {
   /* USER CODE BEGIN Callback 0 */
   static uint16_t TIM2_Cnt = 0;
   if (htim->Instance == TIM2) {  //1ms一次中断
     TIM2_Cnt++;
     if (TIM2_Cnt >= 50) {  //50ms
-      TIM2_Cnt = 0;
-      running_time++;
-      //Send_Vsp();     //发送数据到上位机
-      Receive_Vsp();  //接收来自上位机的数据
+      // TIM2_Cnt = 0;
+      // running_time++;
+      // //Send_Vsp();     //发送数据到上位机
+      // Receive_Vsp();  //接收来自上位机的数据
     }
   }
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM3)
-  {
+  if (htim->Instance == TIM3) {
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
@@ -260,7 +243,7 @@ void Error_Handler(void)
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t *file, uint32_t line)
+void assert_failed(uint8_t * file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
