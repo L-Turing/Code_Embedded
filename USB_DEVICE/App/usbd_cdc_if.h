@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2025 STMicroelectronics.
+  * Copyright (c) 2026 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -78,7 +78,7 @@
   */
 
 /* USER CODE BEGIN EXPORTED_MACRO */
-
+void usb_printf(const char *format, ...);
 /* USER CODE END EXPORTED_MACRO */
 
 /**
@@ -109,7 +109,7 @@ extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 /* USER CODE BEGIN EXPORTED_FUNCTIONS */
-void usb_printf(const char *format, ...);
+
 /* USER CODE END EXPORTED_FUNCTIONS */
 
 /**

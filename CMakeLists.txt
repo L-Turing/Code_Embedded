@@ -19,7 +19,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set the project name
-set(CMAKE_PROJECT_NAME Omni2026_A)
+set(CMAKE_PROJECT_NAME Project_1)
 
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
@@ -44,34 +44,23 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
-    User/Application/main_task.cpp
-    User/BSP/bsp_crc.c
-    User/BSP/bsp_dwt.c
-    User/BSP/bsp_PWM.c
-    User/BSP/bsp_usart.c
-    User/Module/Algorithm/kalman_filter.c
-    User/Module/Algorithm/PID.cpp
-    User/Module/Algorithm/QuaternionEKF.c
-    User/Module/MotorSynthesis/DaMiao.cpp
-    User/Module/MotorSynthesis/Motor.cpp
-    User/Module/MotorSynthesis/SteeringGear.cpp
-    User/Module/Peripheral/IMU.c
-    User/Module/Peripheral/Peripheral.cpp
-    User/Module/Peripheral/SDcard.c
-    User/BSP/buzzer.c
-    
+    Application/main_task.cpp
+    Bsp/bsp_dwt.c
+    Module/SDcard.c
+    Algorithm/crc32.c
+    Module/Peripheral.cpp
     # Add user sources here
 )
 
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
-    User/Application
-    User/BSP
-    User/Module/Algorithm 
-    User/Module/MotorSynthesis 
-    User/Module/Peripheral
+    Algorithm
+    Application
+    Bsp
+    Module
     # Add user defined include paths
 )
+
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
