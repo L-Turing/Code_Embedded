@@ -6,6 +6,7 @@
 #include "main.h"
 #include "math.h"
 #include "task.h"
+#include "usbd_cdc_if.h"
 
 // 函数指针数组----------------------------
 typedef uint8_t (*status_t)(uint8_t, uint8_t);
@@ -21,6 +22,19 @@ void StartINS(void const * argument)
   (void)argument;
   INS_Init();
   op[0](0, 1);
+  // --- CDC_Transmit_FS 测试 + LED 反馈 ---
+  {
+    uint8_t cdc_buf[64];
+    snprintf((char *)cdc_buf, sizeof(cdc_buf),
+             "CDC Test OK! Tick: %lu\r\n", (unsigned long)HAL_GetTick());
+    if (CDC_Transmit_FS(cdc_buf, strlen((char *)cdc_buf)) == 0) {  // 0 = USBD_OK
+      op[0](0, 0);  // 红灯灭
+      op[0](1, 1);  // 绿灯亮 = 发送成功
+    } else {
+      // 红灯保持亮，绿灯灭 = 发送失败
+      op[0](1, 0);
+    }
+  }
   for (;;) {
     INS_Task();
     osDelay(2);
